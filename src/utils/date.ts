@@ -15,3 +15,13 @@ export const fiveMinutesAgo = () => {
 export const oneHourFromNow = () => {
   return new Date(Date.now() + 1 * ONE_HOUR_MS);
 };
+
+export const isDateInFuture = (val: Date) => {
+  if (!val) return false;
+
+  const today = new Date();
+
+  const dateToCheck = new Date(val);
+
+  return dateToCheck > today;
+};
