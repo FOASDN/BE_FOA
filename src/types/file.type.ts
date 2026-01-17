@@ -12,7 +12,7 @@ export enum FileOwnerType {
   CATEGORY = 'category',
 }
 
-export default interface IFile {
+export default interface IFile extends mongoose.Document {
   public_id: string;
   secure_url: string;
   resource_type: ResourceType;

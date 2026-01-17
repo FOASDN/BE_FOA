@@ -28,7 +28,7 @@ type Params = {
   deviceId?: string;
 };
 
-export const setAuthCookies = ({ res, accessToken, refreshToken, deviceId }: Params) => {
+export const setAuthCookies = ({ res, accessToken, refreshToken, deviceId }: Params): Response => {
   return res
     .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
     .cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions())

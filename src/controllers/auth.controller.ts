@@ -1,6 +1,7 @@
 import { CREATED, OK, UNAUTHORIZED } from '@/constants/http';
 import {
   createUser,
+  getMe,
   login,
   refreshUserAccessToken,
   resendVerifyEmail,
@@ -8,6 +9,7 @@ import {
   sendPasswordResetEmail,
   verifyEmail,
 } from '@/services/auth.service';
+import { IUser } from '@/types';
 import appAssert from '@/utils/appAssert';
 import { catchErrors } from '@/utils/asyncHandler';
 import { clearAuthCookies, setAuthCookies } from '@/utils/cookies';
@@ -26,7 +28,7 @@ export const registerHandler = catchErrors(async (req, res) => {
   });
 
   const user = await createUser(params);
-  return res.success(CREATED, { data: user, message: 'Tài khoản đăng ký thành công' });
+  return res.success<Omit<IUser, 'password_hash'>>(CREATED, { data: user, message: 'Tài khoản đăng ký thành công' });
 });
 
 export const loginHandler = catchErrors(async (req, res) => {
@@ -38,7 +40,7 @@ export const loginHandler = catchErrors(async (req, res) => {
     accessToken: access_token,
     refreshToken: refresh_token,
     deviceId: params.device_id,
-  }).success(OK, { data: user, message: 'Đăng nhập thành công' });
+  }).success<Omit<IUser, 'password_hash'>>(OK, { data: user, message: 'Đăng nhập thành công' });
 });
 
 export const refreshHandler = catchErrors(async (req, res) => {
@@ -91,4 +93,10 @@ export const resetPasswordHandler = catchErrors(async (req, res) => {
   return clearAuthCookies(res).success(OK, {
     message: 'Password reset successfully',
   });
+});
+
+export const getMeHandler = catchErrors(async (req, res) => {
+  const user = await getMe(req.userId);
+
+  return res.success<Omit<IUser, 'password_hash'>>(OK, { data: user });
 });

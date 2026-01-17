@@ -1,3 +1,11 @@
 export { default as UserModel } from './users.model';
 export { default as RefreshTokenModel } from './refresh-token.model';
 export { default as VerificationModel } from './verificationCode.model';
+export { default as FileModel } from './file.model';
+export { default as ProductModel } from './product.model';
+export { default as CartModel } from './cart.model';
+export { default as VoucherModel } from './voucher.model';
+export { default as OrderModel } from './order.model';
+export { default as ReviewModel } from './review.model';
+export { default as NotificationModel } from './notification.model';
+export { default as AuditLogModel } from './audit-log.model';

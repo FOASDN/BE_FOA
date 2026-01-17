@@ -1,6 +1,6 @@
 import { EMAIL_REGEX, INTERNATIONAL_PHONE_REGEX, VIETNAM_PHONE_REGEX } from '@/constants/regex';
-import { IUSer, Role } from '@/types';
-import IAddresses from '@/types/user.type';
+import { IUser } from '@/types';
+import { IAddresses, Role } from '@/types/user.type';
 import { compareValue, hashValue } from '@/utils/bcrypt';
 import mongoose from 'mongoose';
 
@@ -24,10 +24,16 @@ const AddressSchema = new mongoose.Schema<IAddresses>(
   }
 );
 
-const UserSchema = new mongoose.Schema<IUSer>(
+const UserSchema = new mongoose.Schema<IUser>(
   {
     username: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, match: EMAIL_REGEX },
+    phone: {
+      type: String,
+      required: false,
+      trim: true,
+      match: VIETNAM_PHONE_REGEX || INTERNATIONAL_PHONE_REGEX,
+    },
     password_hash: { type: String, required: true, minLength: 6 },
     role: { type: String, required: true, enum: Role, default: Role.CUSTOMER },
     verified_at: { type: Date, default: null },
@@ -38,6 +44,11 @@ const UserSchema = new mongoose.Schema<IUSer>(
         default: [],
       },
     ],
+    collected_points: {
+      type: Number,
+      default: 0,
+      min: [0, 'Collected points cannot be negative'],
+    },
   },
   {
     timestamps: true,
@@ -74,6 +85,6 @@ UserSchema.methods.omitPassword = function () {
   return user;
 };
 
-const UserModel = mongoose.model<IUSer>('User', UserSchema, 'users');
+const UserModel = mongoose.model<IUser>('User', UserSchema, 'users');
 
 export default UserModel;

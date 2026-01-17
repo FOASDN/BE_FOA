@@ -19,10 +19,10 @@ const authenticate: RequestHandler = catchErrors(async (req, res, next) => {
   );
 
   // Check if user is valid
-  const user = await UserModel.findById(payload.userId);
+  const user = await UserModel.findById(payload.user_id);
   appAssert(user, UNAUTHORIZED, 'User not found', AppErrorCode.InvalidAccessToken);
 
-  req.userId = payload.userId;
+  req.userId = payload.user_id;
   req.role = payload.role;
   next();
 });
