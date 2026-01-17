@@ -1,6 +1,5 @@
-import { ListParams } from '@/types/dto';
 import z from 'zod';
-import { datePreprocess } from './date.schema';
+import ListParams from '@/types/dto/listParams.dto';
 
 export const listParamsSchema = z.object({
   page: z
@@ -19,11 +18,4 @@ export const listParamsSchema = z.object({
     }),
 
   search: z.string().optional(),
-
-  createdAt: datePreprocess.optional(),
-  updatedAt: datePreprocess.optional(),
-
-  sortBy: z.enum(['createdAt', 'title', 'name' , 'updatedAt']).optional(),
-
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 }) satisfies z.ZodType<ListParams>;

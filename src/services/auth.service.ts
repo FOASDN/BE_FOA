@@ -2,7 +2,7 @@ import { APP_ORIGIN } from '@/constants/env';
 import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from '@/constants/http';
 import { RefreshTokenModel, UserModel } from '@/models';
 import VerificationCodeModel from '@/models/verificationCode.model';
-import { VerificationCodeType } from '@/types';
+import { IUser, VerificationCodeType } from '@/types';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
 import { fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
@@ -12,6 +12,7 @@ import { sendMail } from '@/utils/sendMail';
 import withTransaction from '@/utils/withTransaction';
 import { TLoginParams, TRegisterParams, TResetPasswordParams } from '@/validators/auth.validator';
 import { randomUUID } from 'crypto';
+import mongoose from 'mongoose';
 
 export const createUser = async ({ username, email, password }: TRegisterParams) => {
   return withTransaction(async (session) => {
@@ -256,4 +257,10 @@ export const resetPassword = async ({ verificationCode, password }: TResetPasswo
   return {
     user: updatedUser.omitPassword(),
   };
+};
+
+export const getMe = async (userId: mongoose.Types.ObjectId): Promise<Omit<IUser, 'password_hash'>> => {
+  const user = await UserModel.findById(userId);
+  appAssert(user, NOT_FOUND, 'Không tìm thấy tài khoản người dùng');
+  return user.omitPassword();
 };
