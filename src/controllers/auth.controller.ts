@@ -3,6 +3,7 @@ import {
   createUser,
   getMe,
   login,
+  logoutUser,
   refreshUserAccessToken,
   resendVerifyEmail,
   resetPassword,
@@ -33,17 +34,19 @@ export const registerHandler = catchErrors(async (req, res) => {
 
 export const loginHandler = catchErrors(async (req, res) => {
   const params = loginValidator.parse(req.body);
-  const { user, refresh_token, access_token } = await login(params);
+  const { user, refresh_token, access_token, deviceId } = await login(params);
 
   return setAuthCookies({
     res,
     accessToken: access_token,
     refreshToken: refresh_token,
-    deviceId: params.device_id,
+    deviceId: deviceId,
   }).success<Omit<IUser, 'password_hash'>>(OK, { data: user, message: 'Đăng nhập thành công' });
 });
 
 export const refreshHandler = catchErrors(async (req, res) => {
+  console.log(req.cookies);
+
   const refreshToken = req.cookies.refreshToken as string | undefined;
   appAssert(refreshToken, UNAUTHORIZED, 'Token không hợp lệ');
 
@@ -99,4 +102,11 @@ export const getMeHandler = catchErrors(async (req, res) => {
   const user = await getMe(req.userId);
 
   return res.success<Omit<IUser, 'password_hash'>>(OK, { data: user });
+});
+
+export const logout = catchErrors(async (req, res) => {
+  const userId = req.userId;
+  const deviceId = req.cookies.deviceId as string | undefined;
+  await logoutUser(userId, deviceId);
+  return clearAuthCookies(res).success(OK, { message: 'Đăng xuất thành công' });
 });

@@ -2,7 +2,8 @@ import { APP_ORIGIN } from '@/constants/env';
 import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from '@/constants/http';
 import { RefreshTokenModel, UserModel } from '@/models';
 import VerificationCodeModel from '@/models/verificationCode.model';
-import { IUser, VerificationCodeType } from '@/types';
+import { IUser } from '@/types';
+import { VerificationCodeType } from '@/types/verificationCode.type';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
 import { fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
@@ -74,10 +75,12 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
       await old_refresh_token.save({ session });
     }
 
+    const deviceId = device_id || randomUUID();
+
     const payload = {
       user_id: user._id,
       role: user.role,
-      device_id: device_id || randomUUID(),
+      device_id: deviceId,
     };
     const access_token = signToKen(payload);
     const refresh_token = generateRefreshToken();
@@ -95,6 +98,7 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
       user: user.omitPassword(),
       access_token,
       refresh_token: refresh_token,
+      deviceId,
     };
   });
 };
@@ -263,4 +267,10 @@ export const getMe = async (userId: mongoose.Types.ObjectId): Promise<Omit<IUser
   const user = await UserModel.findById(userId);
   appAssert(user, NOT_FOUND, 'Không tìm thấy tài khoản người dùng');
   return user.omitPassword();
+};
+
+export const logoutUser = async (userId: mongoose.Types.ObjectId, deviceId: string | undefined) => {
+  await RefreshTokenModel.updateMany({ user_id: userId, device_id: deviceId, revoked: false }, { revoked: true });
+
+  return true;
 };
