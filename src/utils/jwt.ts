@@ -1,7 +1,8 @@
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
-import { IUSer as UserDocument, Role } from '@/types';
 import { AUTH_JWT_SECRET } from '@/constants/env';
 import crypto from 'crypto';
+import { IUser as UserDocument } from '@/types';
+import { Role } from '@/types/user.type';
 
 export type AccessTokenPayload = {
   user_id: UserDocument['_id'];
