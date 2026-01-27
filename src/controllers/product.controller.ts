@@ -1,0 +1,60 @@
+import { Request, Response } from 'express';
+import { catchErrors } from '@/utils/asyncHandler';
+import { CREATED, OK } from '@/constants/http';
+import {
+    createProduct,
+    deleteProduct,
+    getAllProducts,
+    getProductById,
+    updateProduct,
+} from '@/services/product.service';
+
+// GET /api/products
+export const getAllProductsHandler = catchErrors(async (req: Request, res: Response) => {
+    const { category, minPrice, maxPrice, minRating, search, sort, page, limit } = req.query;
+
+    const filters = {
+        category: category as string,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        minRating: minRating ? Number(minRating) : undefined,
+        search: search as string,
+        sort: sort as string,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 12,
+    };
+
+    const result = await getAllProducts(filters);
+
+    return res.success(OK, {
+        data: result.products,
+        pagination: result.pagination,
+    });
+});
+
+// GET /api/products/:id
+export const getProductByIdHandler = catchErrors(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const product = await getProductById(id);
+    return res.success(OK, { data: product });
+});
+
+// POST /api/products
+export const createProductHandler = catchErrors(async (req: Request, res: Response) => {
+    const product = await createProduct(req.body);
+    return res.success(CREATED, { data: product, message: 'Product created successfully' });
+});
+
+// PUT /api/products/:id
+export const updateProductHandler = catchErrors(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const product = await updateProduct(id, req.body);
+    return res.success(OK, { data: product, message: 'Product updated successfully' });
+});
+
+// DELETE /api/products/:id
+export const deleteProductHandler = catchErrors(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await deleteProduct(id);
+    return res.success(OK, { message: 'Product deleted successfully' });
+});

@@ -3,35 +3,41 @@ import mongoose from 'mongoose';
 
 const ProductSchema = new mongoose.Schema<IProduct>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     image: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
     price: {
       type: Number,
       required: true,
-      validators: {
-        min: [0, 'Price must be a positive number'],
-      },
+      min: [0, 'Price must be a positive number'],
     },
-    category: { type: String, required: true },
+    category: { type: String, required: true, trim: true },
+    restaurant: { type: String, required: true, trim: true },
+    time: { type: String, required: true },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    review_count: { type: Number, default: 0, min: 0 },
+
     recipe: [
       {
-        name: { type: String, required: true },
-        quantity: { type: String, required: true },
+        name: { type: String },
+        quantity: { type: String },
+        _id: false,
       },
     ],
     tags: [{ type: String }],
-    isAvailable: { type: Boolean, default: false },
+    isAvailable: { type: Boolean, default: true },
   },
   {
     timestamps: true,
   }
 );
 
-//indexes
-ProductSchema.index({ name: 1 }, { unique: true });
+// Indexes for searching and filtering
+ProductSchema.index({ name: 'text', description: 'text' }); // Text search
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ tags: 1 });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ rating: -1 });
 ProductSchema.index({ isAvailable: 1 });
 
 const ProductModel = mongoose.model<IProduct>('Product', ProductSchema, 'products');
