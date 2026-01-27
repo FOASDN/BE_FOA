@@ -6,13 +6,18 @@ export interface IProductIngredient {
   quantity: string;
 }
 
-export default interface IProduct extends mongoose.Document<mongoose.Types.ObjectId> {
+export default interface IProduct extends mongoose.Document {
   name: string;
   description: string;
   image: IFile['_id'];
   price: number;
   category: string;
+  restaurant: string;
+  time: string;
+  rating: number;
+  review_count: number;
   recipe: IProductIngredient[];
   tags: string[];
   isAvailable: boolean;
+  isFavorite?: boolean; // Virtual or user-specific
 }
