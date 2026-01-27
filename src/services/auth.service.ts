@@ -62,6 +62,7 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
     //check exist email
     const user = await UserModel.findOne({ email }).session(session);
     appAssert(user, CONFLICT, 'Thông tin đăng nhập không hợp lệ');
+    appAssert(user.isActive, UNAUTHORIZED, 'Tài khoản chưa được kích hoạt. Vui lòng thiết lập mật khẩu từ email mời.');
 
     //check password
     const isValidatePassword = await user.comparePassword(password);
@@ -151,7 +152,7 @@ export const verifyEmail = async (verificationCodeId: string) => {
   const validCode = await VerificationCodeModel.findOne({
     _id: verificationCodeId,
     type: VerificationCodeType.VERIFY_EMAIL,
-    expiresAt: { $gt: new Date() },
+    expires_at: { $gt: new Date() },
   });
   appAssert(validCode, NOT_FOUND, 'Mã code xác thực không hợp lệ');
   //get user by id
@@ -183,7 +184,7 @@ export const resendVerifyEmail = async (email: string) => {
   const count = await VerificationCodeModel.countDocuments({
     user_id: user._id,
     type: VerificationCodeType.VERIFY_EMAIL,
-    createdAt: { $gt: fiveMinAgo },
+    created_at: { $gt: fiveMinAgo },
   });
   appAssert(count <= 1, TOO_MANY_REQUESTS, 'Quá nhiều lượt xác thực, vui lòng thử lại sau 5 phút.');
 

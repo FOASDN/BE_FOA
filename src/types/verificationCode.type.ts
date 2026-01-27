@@ -4,6 +4,7 @@ import IUser from './user.type';
 export enum VerificationCodeType {
   FORGOT_PASSWORD = 'FORGOT_PASSWORD',
   VERIFY_EMAIL = 'VERIFY_EMAIL',
+  STAFF_INVITE = 'STAFF_INVITE',
 }
 
 export default interface IVerificationCode extends mongoose.Document {
