@@ -2,7 +2,8 @@ import { APP_ORIGIN } from '@/constants/env';
 import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from '@/constants/http';
 import { RefreshTokenModel, UserModel } from '@/models';
 import VerificationCodeModel from '@/models/verificationCode.model';
-import { VerificationCodeType } from '@/types';
+import { IUser } from '@/types';
+import { VerificationCodeType } from '@/types/verificationCode.type';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
 import { fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
@@ -12,6 +13,7 @@ import { sendMail } from '@/utils/sendMail';
 import withTransaction from '@/utils/withTransaction';
 import { TLoginParams, TRegisterParams, TResetPasswordParams } from '@/validators/auth.validator';
 import { randomUUID } from 'crypto';
+import mongoose from 'mongoose';
 
 export const createUser = async ({ username, email, password }: TRegisterParams) => {
   return withTransaction(async (session) => {
@@ -60,6 +62,7 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
     //check exist email
     const user = await UserModel.findOne({ email }).session(session);
     appAssert(user, CONFLICT, 'Thông tin đăng nhập không hợp lệ');
+    appAssert(user.isActive, UNAUTHORIZED, 'Tài khoản chưa được kích hoạt. Vui lòng thiết lập mật khẩu từ email mời.');
 
     //check password
     const isValidatePassword = await user.comparePassword(password);
@@ -73,10 +76,12 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
       await old_refresh_token.save({ session });
     }
 
+    const deviceId = device_id || randomUUID();
+
     const payload = {
       user_id: user._id,
       role: user.role,
-      device_id: device_id || randomUUID(),
+      device_id: deviceId,
     };
     const access_token = signToKen(payload);
     const refresh_token = generateRefreshToken();
@@ -94,6 +99,7 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
       user: user.omitPassword(),
       access_token,
       refresh_token: refresh_token,
+      deviceId,
     };
   });
 };
@@ -146,7 +152,7 @@ export const verifyEmail = async (verificationCodeId: string) => {
   const validCode = await VerificationCodeModel.findOne({
     _id: verificationCodeId,
     type: VerificationCodeType.VERIFY_EMAIL,
-    expiresAt: { $gt: new Date() },
+    expires_at: { $gt: new Date() },
   });
   appAssert(validCode, NOT_FOUND, 'Mã code xác thực không hợp lệ');
   //get user by id
@@ -178,7 +184,7 @@ export const resendVerifyEmail = async (email: string) => {
   const count = await VerificationCodeModel.countDocuments({
     user_id: user._id,
     type: VerificationCodeType.VERIFY_EMAIL,
-    createdAt: { $gt: fiveMinAgo },
+    created_at: { $gt: fiveMinAgo },
   });
   appAssert(count <= 1, TOO_MANY_REQUESTS, 'Quá nhiều lượt xác thực, vui lòng thử lại sau 5 phút.');
 
@@ -256,4 +262,16 @@ export const resetPassword = async ({ verificationCode, password }: TResetPasswo
   return {
     user: updatedUser.omitPassword(),
   };
+};
+
+export const getMe = async (userId: mongoose.Types.ObjectId): Promise<Omit<IUser, 'password_hash'>> => {
+  const user = await UserModel.findById(userId);
+  appAssert(user, NOT_FOUND, 'Không tìm thấy tài khoản người dùng');
+  return user.omitPassword();
+};
+
+export const logoutUser = async (userId: mongoose.Types.ObjectId, deviceId: string | undefined) => {
+  await RefreshTokenModel.updateMany({ user_id: userId, device_id: deviceId, revoked: false }, { revoked: true });
+
+  return true;
 };

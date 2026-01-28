@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
+  getMeHandler,
   loginHandler,
+  logout,
   refreshHandler,
   registerHandler,
   resendVerifyEmailHandler,
@@ -8,6 +10,7 @@ import {
   sendPasswordResetHandler,
   verifyEmailHandler,
 } from '@/controllers/auth.controller';
+import { authenticate } from '@/middlewares';
 
 const authRoutes = Router();
 
@@ -19,5 +22,7 @@ authRoutes.post('/verify-email/:code', verifyEmailHandler);
 authRoutes.post('/resend-verify-email', resendVerifyEmailHandler);
 authRoutes.post('/password/forgot', sendPasswordResetHandler);
 authRoutes.post('/password/reset', resetPasswordHandler);
+authRoutes.get('/me', authenticate, getMeHandler);
+authRoutes.post('/logout', authenticate, logout);
 
 export default authRoutes;

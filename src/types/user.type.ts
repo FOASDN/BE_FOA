@@ -6,7 +6,7 @@ export enum Role {
   CUSTOMER = 'CUSTOMER',
 }
 
-export default interface IAddresses {
+export interface IAddresses {
   label: string;
   receiver_name: string;
   phone: string;
@@ -26,7 +26,8 @@ export default interface IUser extends mongoose.Document<mongoose.Types.ObjectId
   addresses: IAddresses[];
   verified_at: Date;
   isActive: boolean;
+  collected_points: number;
 
   comparePassword(password: string): Promise<boolean>;
-  omitPassword(): void;
+  omitPassword(): Omit<IUser, 'password_hash'>;
 }

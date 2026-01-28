@@ -2,7 +2,7 @@ import { CookieOptions, Response } from 'express';
 import { fifteenMinutesFromNow, thirtyDaysFromNow } from './date';
 
 const secure = process.env.NODE_ENV !== 'development';
-export const REFRESH_PATH = '/auth/refresh';
+export const REFRESH_PATH = '/api/auth/refresh';
 
 const defaults: CookieOptions = {
   sameSite: 'strict',
@@ -28,7 +28,7 @@ type Params = {
   deviceId?: string;
 };
 
-export const setAuthCookies = ({ res, accessToken, refreshToken, deviceId }: Params) => {
+export const setAuthCookies = ({ res, accessToken, refreshToken, deviceId }: Params): Response => {
   return res
     .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
     .cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions())

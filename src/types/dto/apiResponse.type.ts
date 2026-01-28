@@ -8,9 +8,5 @@ export interface IApiResponse<T> {
   message?: string;
   data?: T | null;
   error?: IApiError | null;
-  meta?: {
-    timestamp: string;
-    timezone: string;
-    [key: string]: any;
-  };
+  [key: string]: any;
 }
