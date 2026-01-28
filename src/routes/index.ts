@@ -3,6 +3,8 @@ import authRoutes from './auth.route';
 import adminRoutes from './admin.route';
 import voucherRoutes from './voucher.route';
 import productRoute from './product.route';
+import locationRoutes from './location.route';
+
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
@@ -13,6 +15,7 @@ appRoutes.use('/auth', authRoutes);
 appRoutes.use('/admin', adminRoutes);
 appRoutes.use('/vouchers', voucherRoutes);
 appRoutes.use('/products', productRoute);
+appRoutes.use('/location', locationRoutes);
 
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
