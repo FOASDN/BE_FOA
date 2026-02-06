@@ -33,7 +33,6 @@ export default interface IOrder extends mongoose.Document<mongoose.Types.ObjectI
   status: OrderStatus;
   items: IOrderItem[];
   voucher: IVoucher['_id'] | null;
-  shipping_fee: number;
   sub_total: number;
   total_price: number;
   payment: {
