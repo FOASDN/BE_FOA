@@ -1,5 +1,5 @@
 import IProduct from './product.type';
-import { IUser } from './user.type';
+import IUser from './user.type';
 
 export interface ICartVariation {
   name: string;

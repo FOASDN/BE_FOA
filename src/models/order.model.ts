@@ -1,6 +1,7 @@
 import { IDeliveryAddress, IOrderItem, IOrderItemVariation, OrderStatus, PaymentMethod } from '@/types/order.type';
 import { IOrder } from '@/types';
 import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
 
 const OrderItemVariationSchema = new mongoose.Schema<IOrderItemVariation>(
   {
@@ -62,7 +63,6 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     },
     items: [{ type: OrderItemSchema, required: true }],
     voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' },
-    shipping_fee: { type: Number, validators: { min: [0, 'Shipping fee must be a positive number'] } },
     sub_total: { type: Number, validators: { min: [0, 'Sub total must be a positive number'] } },
     total_price: { type: Number, validators: { min: [0, 'Total price must be a positive number'] } },
     payment: {
@@ -84,6 +84,12 @@ OrderSchema.index({ status: 1 });
 OrderSchema.index({ 'payment.method': 1 });
 OrderSchema.index({ 'delivery_info.shipped_at': 1 });
 OrderSchema.index({ 'delivery_info.delivered_at': 1 });
+
+//hooks
+OrderSchema.pre('save', function (next) {
+  this.code = randomUUID().toUpperCase();
+  next();
+});
 
 const OrderModel = mongoose.model<IOrder>('Order', OrderSchema, 'orders');
 
