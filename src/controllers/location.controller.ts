@@ -1,28 +1,25 @@
-function isInDaNang(lat, lng) {
-  return (
-    lat >= 15.9 &&
-    lat <= 16.2 &&
-    lng >= 107.9 &&
-    lng <= 108.35
-  );
-}
+import { Request, Response } from 'express';
 
-exports.receiveLocation = (req, res) => {
+export const receiveLocation = (req: Request, res: Response) => {
+
   const { lat, lng } = req.body;
 
-  if (!lat || !lng) {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+
+  if (!lat || !lng || isNaN(latitude) || isNaN(longitude)) {
     return res.status(400).json({
       ok: false,
-      message: "Thiếu tọa độ",
+      message: "Thiếu hoặc tọa độ không hợp lệ",
     });
   }
 
-  const isValid = isInDaNang(lat, lng);
+  const isValid = isInDaNang(latitude, longitude);
 
   return res.json({
     ok: true,
-    lat,
-    lng,
+    lat: latitude,
+    lng: longitude,
     isValid,
     area: isValid ? "Đà Nẵng" : "Ngoài Đà Nẵng",
     message: isValid
@@ -30,3 +27,14 @@ exports.receiveLocation = (req, res) => {
       : "Vị trí không hợp lệ (ngoài khu vực Đà Nẵng)",
   });
 };
+
+function isInDaNang(lat: number, lng: number): boolean {
+  return (
+    lat >= 15.85 &&
+    lat <= 16.3 &&
+    lng >= 107.75 &&
+    lng <= 108.5
+  );
+}
+
+

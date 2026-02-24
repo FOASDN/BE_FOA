@@ -7,13 +7,12 @@ import connectToDatabase from './config/db';
 import { customResponse, errorHandler } from './middlewares';
 
 const app = express();
-const locationRoute = require("./routes/location.route");
 //middleware
 app.use(
   cors({
     origin: APP_ORIGIN,
     credentials: true,
-     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 app.options("*", cors());
@@ -24,7 +23,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //app routes
-app.use('/api/location', locationRoute);
 app.use('/api', appRoutes);
 
 // error handler 
