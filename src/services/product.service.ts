@@ -23,34 +23,29 @@ export const getAllProducts = async (filters: ProductFilters) => {
         search,
         sort = 'popular',
         page = 1,
-        limit = 12, // Match frontend grid size usually
+        limit = 12, 
     } = filters;
 
     const query: any = { isAvailable: true };
 
-    // Category filter
     if (category && category !== 'all') {
         query.category = category;
     }
 
-    // Price range filter
     if (minPrice !== undefined || maxPrice !== undefined) {
         query.price = {};
         if (minPrice !== undefined) query.price.$gte = minPrice;
         if (maxPrice !== undefined) query.price.$lte = maxPrice;
     }
 
-    // Rating filter
     if (minRating !== undefined) {
         query.rating = { $gte: minRating };
     }
 
-    // Search filter
     if (search) {
         query.$text = { $search: search };
     }
 
-    // Sorting
     let sortOptions: any = {};
     switch (sort) {
         case 'price_asc':
@@ -66,7 +61,6 @@ export const getAllProducts = async (filters: ProductFilters) => {
             break;
         case 'popular':
         default:
-            // Assuming 'popular' means high review count or rating, or just created date for now
             sortOptions = { review_count: -1, rating: -1 };
             break;
     }
