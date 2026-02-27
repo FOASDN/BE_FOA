@@ -18,7 +18,7 @@ const authRoutes = Router();
 authRoutes.post('/register', registerHandler);
 authRoutes.post('/login', loginHandler);
 authRoutes.post('/refresh', refreshHandler);
-authRoutes.post('/verify-email/:code', verifyEmailHandler);
+authRoutes.post('/verify-email', verifyEmailHandler);
 authRoutes.post('/resend-verify-email', resendVerifyEmailHandler);
 authRoutes.post('/password/forgot', sendPasswordResetHandler);
 authRoutes.post('/password/reset', resetPasswordHandler);
