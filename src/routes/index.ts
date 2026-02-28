@@ -2,14 +2,10 @@ import { Router } from 'express';
 import authRoutes from './auth.route';
 import adminRoutes from './admin.route';
 import voucherRoutes from './voucher.route';
-<<<<<<< Updated upstream
 import productRoute from './product.route';
 import locationRoutes from './location.route';
-
-=======
-import productRoutes from './product.route';
 import orderRoutes from './order.route';
->>>>>>> Stashed changes
+import userRoutes from './user.route';
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
@@ -19,14 +15,10 @@ const appRoutes = Router();
 appRoutes.use('/auth', authRoutes);
 appRoutes.use('/admin', adminRoutes);
 appRoutes.use('/vouchers', voucherRoutes);
-<<<<<<< Updated upstream
 appRoutes.use('/products', productRoute);
 appRoutes.use('/location', locationRoutes);
-=======
-appRoutes.use('/products', productRoutes);
 appRoutes.use('/orders', orderRoutes);
->>>>>>> Stashed changes
-
+appRoutes.use('/users', userRoutes);
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
 

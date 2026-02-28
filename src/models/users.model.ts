@@ -4,6 +4,8 @@ import { IAddresses, Role } from '@/types/user.type';
 import { compareValue, hashValue } from '@/utils/bcrypt';
 import mongoose from 'mongoose';
 
+const isValidPhone = (v: string) => VIETNAM_PHONE_REGEX.test(v) || INTERNATIONAL_PHONE_REGEX.test(v);
+
 const AddressSchema = new mongoose.Schema<IAddresses>(
   {
     label: { type: String, required: true, trim: true },
@@ -11,7 +13,13 @@ const AddressSchema = new mongoose.Schema<IAddresses>(
     phone: {
       type: String,
       trim: true,
-      match: VIETNAM_PHONE_REGEX || INTERNATIONAL_PHONE_REGEX,
+      validate: {
+        validator: function (v: string) {
+          if (v == null || v === '') return true;
+          return isValidPhone(v);
+        },
+        message: 'Số điện thoại không hợp lệ',
+      },
     },
     detail: { type: String, required: true, trim: true },
     ward: { type: String, required: true, trim: true },
@@ -30,9 +38,14 @@ const UserSchema = new mongoose.Schema<IUser>(
     email: { type: String, required: true, trim: true, match: EMAIL_REGEX },
     phone: {
       type: String,
-      required: false,
       trim: true,
-      match: VIETNAM_PHONE_REGEX || INTERNATIONAL_PHONE_REGEX,
+      validate: {
+        validator: function (v: string) {
+          if (v == null || v === '') return true;
+          return isValidPhone(v);
+        },
+        message: 'Số điện thoại không hợp lệ',
+      },
     },
     password_hash: { type: String, required: true, minLength: 6 },
     role: { type: String, required: true, enum: Role, default: Role.CUSTOMER },

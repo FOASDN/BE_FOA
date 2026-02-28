@@ -13,16 +13,12 @@ export const getVerifyEmailTemplate = (url: string) => ({
 export const getStaffInviteTemplate = (url: string) => {
   return {
     subject: 'Bạn được mời tham gia hệ thống FOA',
-    text: ['Xin chào,',
-    'Bạn đã được Admin tạo tài khoản nhân viên trên hệ thống FOA.',
-    'Vui lòng mở link sau để thiết lập mật khẩu và kích hoạt tài khoản:',
-    url,
-    '',
+    text:` Xin chào, bạn đã được Admin tạo tài khoản nhân viên trên hệ thống FOA.
+    'Vui lòng mở link sau để thiết lập mật khẩu và kích hoạt tài khoản:
+    ${url},
     'Liên kết này sẽ hết hạn sau 1 giờ.',
     'Nếu bạn không mong đợi email này, vui lòng bỏ qua.',
-    '',
-    'FOA System – Email tự động, vui lòng không trả lời.',
-  ].join('\n'),
+    'Đây là email tự động, vui lòng không trả lời.`,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6">
         <p style="margin: 24px 0">
