@@ -5,18 +5,18 @@ import { Request, RequestHandler, NextFunction, Response } from "express";
 
 const authorize =
   (...allowedRoles: Role[]) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    const role = req.role;
-    appAssert(role, FORBIDDEN, "Not authorized");
+    (req: Request, res: Response, next: NextFunction) => {
+      const role = req.role;
+      appAssert(role, FORBIDDEN, "Not authorized");
 
-    //check if role is allowed
-    appAssert(
-      allowedRoles.includes(role),
-      FORBIDDEN,
-      "Not authorized to access this route"
-    );
+      //check if role is allowed
+      appAssert(
+        allowedRoles.includes(role),
+        FORBIDDEN,
+        "Not authorized to access this route"
+      );
 
-    next();
-  };
+      next();
+    };
 
 export default authorize;

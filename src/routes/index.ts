@@ -20,16 +20,16 @@ appRoutes.use('/location', locationRoutes);
 appRoutes.use('/orders', orderRoutes);
 appRoutes.use('/users', userRoutes);
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
+    if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
 
-  const file = req.file;
-  const data = parseFormData(req.body);
+    const file = req.file;
+    const data = parseFormData(req.body);
 
-  const result = await uploadBuffer({
-    file: req.file,
-  });
+    const result = await uploadBuffer({
+        file: req.file,
+    });
 
-  return res.json(result);
+    return res.json(result);
 });
 
 export default appRoutes;

@@ -20,6 +20,7 @@ import {
   registerValidator,
   resetPasswordValidator,
   verificationCodeValidator,
+  verifyEmailValidator,
 } from '@/validators/auth.validator';
 
 export const registerHandler = catchErrors(async (req, res) => {
@@ -60,9 +61,9 @@ export const refreshHandler = catchErrors(async (req, res) => {
 });
 
 export const verifyEmailHandler = catchErrors(async (req, res) => {
-  const verificationCodeId = verificationCodeValidator.parse(req.params.code);
+  const { email, code } = verifyEmailValidator.parse(req.body);
 
-  await verifyEmail(verificationCodeId);
+  await verifyEmail(email, code);
 
   return res.success(OK, { message: 'Xác thức email thành công' });
 });

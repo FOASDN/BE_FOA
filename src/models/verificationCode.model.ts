@@ -10,6 +10,7 @@ const verificationSchema = new mongoose.Schema<IVerificationCode>({
   },
   type: { type: String, required: true },
   email: { type: String, required: true },
+  code: { type: String, required: true },
   created_at: { type: Date, required: true, default: Date.now },
   expires_at: { type: Date, required: true },
 });

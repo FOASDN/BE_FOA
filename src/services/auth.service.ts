@@ -6,8 +6,8 @@ import { IUser } from '@/types';
 import { VerificationCodeType } from '@/types/verificationCode.type';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
-import { fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
-import { getPasswordResetTemplate, getVerifyEmailTemplate } from '@/utils/emailTemplates';
+import { fifteenMinutesFromNow, fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
+import { getPasswordResetTemplate, getVerifyEmailOTPtemplate } from '@/utils/emailTemplates';
 import { generateRefreshToken, hashToken, signToKen } from '@/utils/jwt';
 import { sendMail } from '@/utils/sendMail';
 import withTransaction from '@/utils/withTransaction';
@@ -33,25 +33,26 @@ export const createUser = async ({ username, email, password }: TRegisterParams)
 
     await user.save({ session });
 
-    //create verification code
+    //create 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
     const verification_code = new VerificationCodeModel({
       user_id: user._id,
       type: VerificationCodeType.VERIFY_EMAIL,
       email,
-      expires_at: thirtyDaysFromNow(),
+      code,
+      expires_at: fifteenMinutesFromNow(),
     });
 
     await verification_code.save({ session });
 
     //send email
-    const url = `${APP_ORIGIN}/verify-email/${verification_code._id}`;
-    //send email
     const { error } = await sendMail({
       to: email,
-      ...getVerifyEmailTemplate(url),
+      ...getVerifyEmailOTPtemplate(code),
     });
 
-    appAssert(!error, INTERNAL_SERVER_ERROR, 'Lỗi khi gửi email');
+    appAssert(!error, INTERNAL_SERVER_ERROR, 'Lỗi khi gửi email xác thực');
 
     return user.omitPassword();
   });
@@ -147,15 +148,17 @@ export const refreshUserAccessToken = async (refresh_token: string) => {
   };
 };
 
-export const verifyEmail = async (verificationCodeId: string) => {
+export const verifyEmail = async (email: string, code: string) => {
   //get the verification code from db
   const validCode = await VerificationCodeModel.findOne({
-    _id: verificationCodeId,
+    email,
+    code,
     type: VerificationCodeType.VERIFY_EMAIL,
     expires_at: { $gt: new Date() },
   });
-  appAssert(validCode, NOT_FOUND, 'Mã code xác thực không hợp lệ');
-  //get user by id
+
+  appAssert(validCode, NOT_FOUND, 'Mã xác thực không chính xác hoặc đã hết hạn');
+
   //update user verified true
   const updatedUser = await UserModel.findByIdAndUpdate(
     validCode.user_id,
@@ -164,10 +167,12 @@ export const verifyEmail = async (verificationCodeId: string) => {
     },
     { new: true }
   );
+
   appAssert(updatedUser, INTERNAL_SERVER_ERROR, 'Lỗi khi xác thực tài khoản');
+
   //delete verification code record
   await validCode.deleteOne();
-  //return user
+
   return {
     user: updatedUser.omitPassword(),
   };
@@ -177,7 +182,7 @@ export const resendVerifyEmail = async (email: string) => {
   //get user
   const user = await UserModel.findOne({ email });
   appAssert(user, NOT_FOUND, 'Không tìm thấy tài khoản người dùng');
-  appAssert(!user.verified_at, NOT_FOUND, 'Tài khoản đã được xác thực');
+  appAssert(!user.verified_at, CONFLICT, 'Tài khoản đã được xác thực');
 
   //check email rate limit
   const fiveMinAgo = fiveMinutesAgo();
@@ -186,23 +191,28 @@ export const resendVerifyEmail = async (email: string) => {
     type: VerificationCodeType.VERIFY_EMAIL,
     created_at: { $gt: fiveMinAgo },
   });
-  appAssert(count <= 1, TOO_MANY_REQUESTS, 'Quá nhiều lượt xác thực, vui lòng thử lại sau 5 phút.');
+  appAssert(count <= 2, TOO_MANY_REQUESTS, 'Quá nhiều lượt xác thực, vui lòng thử lại sau 5 phút.');
+
+  //create 6-digit verification code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
 
   //create verification code
   const verificationCode = await VerificationCodeModel.create({
     user_id: user._id,
     type: VerificationCodeType.VERIFY_EMAIL,
     email: user.email,
-    expires_at: thirtyDaysFromNow(),
+    code,
+    expires_at: fifteenMinutesFromNow(),
   });
+
   //send verification email
-  const url = `${APP_ORIGIN}/auth/verify-email/${verificationCode._id}`;
   const { error } = await sendMail({
     to: user.email,
-    ...getVerifyEmailTemplate(url),
+    ...getVerifyEmailOTPtemplate(code),
   });
-  appAssert(!error, INTERNAL_SERVER_ERROR, `Lỗi khi gửi email`);
-  //return success message
+
+  appAssert(!error, INTERNAL_SERVER_ERROR, `Lỗi khi gửi email xác thực`);
+
   return true;
 };
 

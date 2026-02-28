@@ -79,7 +79,6 @@ const OrderSchema = new mongoose.Schema<IOrder>(
 
 //indexes
 OrderSchema.index({ user_id: 1 });
-OrderSchema.index({ code: 1 }, { unique: true });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ 'payment.method': 1 });
 OrderSchema.index({ 'delivery_info.shipped_at': 1 });

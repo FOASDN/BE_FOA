@@ -6,6 +6,9 @@ import {
     getProductByIdHandler,
     updateProductHandler,
 } from '@/controllers/product.controller';
+import authenticate from '@/middlewares/authenticate';
+import authorize from '@/middlewares/authorize';
+import { Role } from '@/types/user.type';
 
 const router = Router();
 
@@ -14,8 +17,8 @@ router.get('/', getAllProductsHandler);
 router.get('/:id', getProductByIdHandler);
 
 // Admin routes (should add auth/admin middleware in production)
-router.post('/', createProductHandler);
-router.put('/:id', updateProductHandler);
-router.delete('/:id', deleteProductHandler);
+router.post('/', authenticate, authorize(Role.ADMIN),  createProductHandler);
+router.put('/:id', authenticate, authorize(Role.ADMIN), updateProductHandler);
+router.delete('/:id', authenticate, authorize(Role.ADMIN), deleteProductHandler);
 
 export default router;

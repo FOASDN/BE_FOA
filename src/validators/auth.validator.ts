@@ -11,7 +11,10 @@ const passwordValidator = z
 const usernameValidator = z
   .string()
   .min(3, 'Username must be at least 3 characters')
-  .regex(/^[a-zA-Z0-9]+$/, 'Username can only contain letters and numbers, no spaces or special characters');
+  .regex(
+    /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]+$/,
+    'Username can only contain letters, numbers and spaces'
+  );
 
 export const loginValidator = z.object({
   email: emailValidator,
@@ -34,9 +37,17 @@ export const registerValidator = loginValidator
 
 export type TRegisterParams = z.infer<typeof registerValidator>;
 
-export const verificationCodeValidator = z.string().length(24);
+export const verificationCodeValidator = z.string().length(6, 'Mã xác thực phải có 6 chữ số');
+
+export const verifyEmailValidator = z.object({
+  email: emailValidator,
+  code: verificationCodeValidator,
+});
+
+export type TVerifyEmailParams = z.infer<typeof verifyEmailValidator>;
+
 export const resetPasswordValidator = z.object({
-  verificationCode: verificationCodeValidator,
+  verificationCode: z.string().length(24),
   password: passwordValidator,
   confirm_password: passwordValidator,
 });
