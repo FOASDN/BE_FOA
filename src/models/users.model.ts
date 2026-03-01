@@ -47,6 +47,8 @@ const UserSchema = new mongoose.Schema<IUser>(
         message: 'Số điện thoại không hợp lệ',
       },
     },
+    avatar: { type: String, default: null },
+    avatar_public_id: { type: String, default: null },
     password_hash: { type: String, required: true, minLength: 6 },
     role: { type: String, required: true, enum: Role, default: Role.CUSTOMER },
     verified_at: { type: Date, default: null },
