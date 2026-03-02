@@ -17,7 +17,6 @@ const CartSchema = new mongoose.Schema<ICart>({
       ],
     },
   ],
-  note: { type: String, default: '' },
 });
 
 //indexes
