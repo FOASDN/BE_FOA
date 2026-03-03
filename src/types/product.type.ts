@@ -18,6 +18,8 @@ export default interface IProduct extends mongoose.Document {
   review_count: number;
   recipe: IProductIngredient[];
   tags: string[];
+  health_warning?: string;
+  health_tags: string[];
   isAvailable: boolean;
   isFavorite?: boolean; // Virtual or user-specific
 }

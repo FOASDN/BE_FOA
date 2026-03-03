@@ -5,9 +5,7 @@ import voucherRoutes from './voucher.route';
 import productRoute from './product.route';
 import locationRoutes from './location.route';
 import orderRoutes from './order.route';
-import { uploadImage } from '@/config/multer';
-import { uploadBuffer } from '@/utils/uploadFile';
-import { parseFormData } from '@/utils/parseFormData';
+import fileRoutes from './file.route';
 
 const appRoutes = Router();
 
@@ -17,18 +15,7 @@ appRoutes.use('/vouchers', voucherRoutes);
 appRoutes.use('/products', productRoute);
 appRoutes.use('/location', locationRoutes);
 appRoutes.use('/orders', orderRoutes);
-
-appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
-
-    const file = req.file;
-    const data = parseFormData(req.body);
-
-    const result = await uploadBuffer({
-        file: req.file,
-    });
-
-    return res.json(result);
-});
+// File upload / management — bảo vệ bằng auth trong file.route.ts
+appRoutes.use('/files', fileRoutes);
 
 export default appRoutes;
