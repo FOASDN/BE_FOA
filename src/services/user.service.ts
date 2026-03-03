@@ -1,11 +1,29 @@
 import mongoose from 'mongoose';
 import { UserModel } from '@/models';
 import { IUser } from '@/types';
+import { Role } from '@/types/user.type';
 import appAssert from '@/utils/appAssert';
 import { CONFLICT, NOT_FOUND } from '@/constants/http';
 import withTransaction from '@/utils/withTransaction';
 import { auditUserUpdated } from '@/services/audit-log.service';
 import { TUpdateMeParams } from '@/validators/auth.validator';
+
+export const getUsersByRole = async (role: Role, page: number = 1, limit: number = 10) => {
+  const skip = (page - 1) * limit;
+
+  const [users, total] = await Promise.all([
+    UserModel.find({ role }).select('-password_hash').skip(skip).limit(limit).lean(),
+    UserModel.countDocuments({ role }),
+  ]);
+
+  return {
+    users,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+};
 
 const normalizeDefaultAddress = (addresses?: any[]) => {
   if (!addresses) return addresses;
