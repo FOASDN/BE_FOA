@@ -1,4 +1,4 @@
-import { EMAIL_REGEX } from '@/constants/regex';
+import { EMAIL_REGEX, VIETNAM_PHONE_REGEX, INTERNATIONAL_PHONE_REGEX } from '@/constants/regex';
 import z from 'zod';
 
 export const emailValidator = z.string().min(1).max(255).regex(EMAIL_REGEX, 'Invalid email format');
@@ -53,3 +53,25 @@ export const resetPasswordValidator = z.object({
 });
 
 export type TResetPasswordParams = z.infer<typeof resetPasswordValidator>;
+
+const phone = z.string().trim().refine(
+  (v) => VIETNAM_PHONE_REGEX.test(v) || INTERNATIONAL_PHONE_REGEX.test(v),
+  'Số điện thoại không hợp lệ'
+);
+
+export const updateMeValidator = z.object({
+  username: usernameValidator.optional(),
+  phone: phone.optional(),
+  addresses: z.array(z.object({
+    label: z.string().trim().min(1),
+    receiver_name: z.string().trim().min(1),
+    phone: phone.optional(),
+    detail: z.string().trim().min(1),
+    ward: z.string().trim().min(1),
+    district: z.string().trim().min(1),
+    city: z.string().trim().min(1),
+    isDefault: z.boolean().optional(),
+  })).max(10).optional(),
+}).strict();
+
+export type TUpdateMeParams = z.infer<typeof updateMeValidator>;
