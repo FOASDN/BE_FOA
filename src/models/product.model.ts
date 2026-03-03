@@ -25,6 +25,8 @@ const ProductSchema = new mongoose.Schema<IProduct>(
       },
     ],
     tags: [{ type: String }],
+    health_warning: { type: String },
+    health_tags: [{ type: String }],
     isAvailable: { type: Boolean, default: true },
   },
   {
@@ -33,9 +35,15 @@ const ProductSchema = new mongoose.Schema<IProduct>(
 );
 
 // Indexes for searching and filtering
-ProductSchema.index({ name: 'text', description: 'text' }); // Text search
+ProductSchema.index({
+  name: 'text',
+  description: 'text',
+  health_warning: 'text',
+  health_tags: 'text',
+}); // Text search
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ tags: 1 });
+ProductSchema.index({ health_tags: 1 });
 ProductSchema.index({ price: 1 });
 ProductSchema.index({ rating: -1 });
 ProductSchema.index({ isAvailable: 1 });
