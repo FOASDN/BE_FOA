@@ -32,6 +32,15 @@ const AddressSchema = new mongoose.Schema<IAddresses>(
   }
 );
 
+const PreferencesSchema = new mongoose.Schema(
+  {
+    dietary: { type: [String], default: [] },
+    allergies: { type: [String], default: [] },
+    health_goals: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const HealthProfileSchema = new mongoose.Schema<IHealthProfile>(
   {
     allergies: [{ type: String }],
@@ -72,6 +81,10 @@ const UserSchema = new mongoose.Schema<IUser>(
       type: Number,
       default: 0,
       min: [0, 'Collected points cannot be negative'],
+    },
+    preferences: {
+      type: PreferencesSchema,
+      default: () => ({ dietary: [], allergies: [], health_goals: [] }),
     },
     healthProfile: {
       type: HealthProfileSchema,
