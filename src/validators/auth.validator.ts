@@ -77,6 +77,11 @@ export const updateMeValidator = z.object({
     conditions: z.array(z.string()).optional(),
     dietaryGoals: z.array(z.string()).optional(),
   }).optional(),
+  preferences: z.object({
+    dietary: z.array(z.string().trim()).optional(),
+    allergies: z.array(z.string().trim()).optional(),
+    health_goals: z.array(z.string().trim()).optional(),
+  }).optional(),
 }).strict();
 
 export type TUpdateMeParams = z.infer<typeof updateMeValidator>;

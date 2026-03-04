@@ -1,8 +1,14 @@
 import { OK } from '@/constants/http';
 import { IUser } from '@/types';
 import { catchErrors } from '@/utils/asyncHandler';
-import { updateMe } from '@/services/user.service';
+import { updateMe, changePassword } from '@/services/user.service';
 import { updateMeValidator } from '@/validators/auth.validator';
+import { z } from 'zod';
+
+const changePasswordValidator = z.object({
+  currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+  newPassword: z.string().min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự'),
+});
 import { uploadBuffer, deleteFile } from "@/utils/uploadFile";
 import User from '@/models/users.model';
 
@@ -15,6 +21,12 @@ export const updateMeHandler = catchErrors(async (req, res) => {
     data: user,
     message: 'Cập nhật hồ sơ thành công',
   });
+});
+
+export const changePasswordHandler = catchErrors(async (req, res) => {
+  const { currentPassword, newPassword } = changePasswordValidator.parse(req.body);
+  await changePassword(req.userId, currentPassword, newPassword);
+  return res.success(OK, { message: 'Đổi mật khẩu thành công' });
 });
 
 export const updateMyAvatarHandler = catchErrors(async (req, res) => {
