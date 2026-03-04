@@ -45,6 +45,11 @@ const seedUsers = [
     isActive: true,
     verified_at: new Date(),
     collected_points: 500,
+    healthProfile: {
+      allergies: ['Hải sản có vỏ', 'Gluten'],
+      conditions: [],
+      dietaryGoals: []
+    },
     addresses: [
       {
         label: 'Nhà',
@@ -58,6 +63,38 @@ const seedUsers = [
       },
     ],
   },
+  {
+    username: 'customer02',
+    email: 'diet@foodiedash.vn',
+    phone: '0900000004',
+    password_hash: 'Customer@123',
+    role: Role.CUSTOMER,
+    isActive: true,
+    verified_at: new Date(),
+    collected_points: 100,
+    healthProfile: {
+      allergies: [],
+      conditions: ['Tiểu đường'],
+      dietaryGoals: ['Low Carb', 'Eat Clean', 'Healthy']
+    },
+    addresses: [],
+  },
+  {
+    username: 'customer03',
+    email: 'allergy@foodiedash.vn',
+    phone: '0900000005',
+    password_hash: 'Customer@123',
+    role: Role.CUSTOMER,
+    isActive: true,
+    verified_at: new Date(),
+    collected_points: 250,
+    healthProfile: {
+      allergies: ['Đậu phộng', 'Sữa bò', 'Trứng'],
+      conditions: [],
+      dietaryGoals: ['High Protein']
+    },
+    addresses: [],
+  }
 ];
 
 async function seedUserData() {
@@ -83,6 +120,8 @@ async function seedUserData() {
     console.log('│ ADMIN    │ admin@foodiedash.vn        │ Admin@123    │');
     console.log('│ STAFF    │ staff@foodiedash.vn        │ Staff@123    │');
     console.log('│ CUSTOMER │ customer@foodiedash.vn     │ Customer@123 │');
+    console.log('│ CUSTOMER │ diet@foodiedash.vn         │ Customer@123 │');
+    console.log('│ CUSTOMER │ allergy@foodiedash.vn      │ Customer@123 │');
     console.log('└──────────┴───────────────────────────┴──────────────┘');
 
     process.exit(0);

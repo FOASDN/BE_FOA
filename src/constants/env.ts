@@ -34,3 +34,6 @@ export const GOOGLE_APP_PASSWORD = getEnv('GOOGLE_APP_PASSWORD');
 export const CLOUDINARY_CLOUD_NAME = getEnv('CLOUDINARY_CLOUD_NAME');
 export const CLOUDINARY_API_KEY = getEnv('CLOUDINARY_API_KEY');
 export const CLOUDINARY_API_SECRET = getEnv('CLOUDINARY_API_SECRET');
+
+// gemini ai
+export const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
