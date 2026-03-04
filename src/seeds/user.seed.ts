@@ -48,7 +48,7 @@ const seedUsers = [
     healthProfile: {
       allergies: ['Hải sản có vỏ', 'Gluten'],
       conditions: [],
-      dietaryGoals: []
+      dietaryGoals: [],
     },
     addresses: [
       {
@@ -75,7 +75,7 @@ const seedUsers = [
     healthProfile: {
       allergies: [],
       conditions: ['Tiểu đường'],
-      dietaryGoals: ['Low Carb', 'Eat Clean', 'Healthy']
+      dietaryGoals: ['Low Carb', 'Eat Clean', 'Healthy'],
     },
     addresses: [],
   },
@@ -91,10 +91,10 @@ const seedUsers = [
     healthProfile: {
       allergies: ['Đậu phộng', 'Sữa bò', 'Trứng'],
       conditions: [],
-      dietaryGoals: ['High Protein']
+      dietaryGoals: ['High Protein'],
     },
     addresses: [],
-  }
+  },
 ];
 
 async function seedUserData() {
