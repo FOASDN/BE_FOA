@@ -64,6 +64,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     items: [{ type: OrderItemSchema, required: true }],
     voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' },
     sub_total: { type: Number, validators: { min: [0, 'Sub total must be a positive number'] } },
+    shipping_fee: { type: Number, default: 0, min: 0 },
     total_price: { type: Number, validators: { min: [0, 'Total price must be a positive number'] } },
     payment: {
       method: { type: String, required: true, enum: PaymentMethod, default: PaymentMethod.CASH_ON_DELIVERY },
@@ -85,8 +86,11 @@ OrderSchema.index({ 'delivery_info.shipped_at': 1 });
 OrderSchema.index({ 'delivery_info.delivered_at': 1 });
 
 //hooks
-OrderSchema.pre('save', function (next) {
-  this.code = randomUUID().toUpperCase();
+OrderSchema.pre('validate', function (next) {
+  // Only generate code once — on creation
+  if (this.isNew && !this.code) {
+    this.code = `ORD-${randomUUID().split('-')[0].toUpperCase()}`;
+  }
   next();
 });
 
