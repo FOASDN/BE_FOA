@@ -17,6 +17,7 @@ const sampleProducts = [
         time: "10-15 min",
         imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop",
         tags: ["Best Seller", "Must Try"],
+        recipe: [{ name: "Bánh phở" }, { name: "Thịt bò" }, { name: "Hành lá" }, { name: "Nước hầm xương" }],
         isAvailable: true
     },
     {
@@ -28,8 +29,9 @@ const sampleProducts = [
         rating: 4.7,
         review_count: 98,
         time: "10-15 min",
-        imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop", // Changed to safe working image
+        imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop",
         tags: ["Healthy"],
+        recipe: [{ name: "Bánh phở" }, { name: "Thịt gà" }, { name: "Hành lá" }],
         isAvailable: true
     },
     {
@@ -43,6 +45,7 @@ const sampleProducts = [
         time: "15-20 min",
         imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500&h=500&fit=crop",
         tags: ["Chef Choice"],
+        recipe: [{ name: "Bánh phở" }, { name: "Thịt bò" }, { name: "Bò viên" }, { name: "Gân bò" }],
         isAvailable: true
     },
 
@@ -56,8 +59,9 @@ const sampleProducts = [
         rating: 4.8,
         review_count: 340,
         time: "10-15 min",
-        imageUrl: "https://www.hungryhuy.com/wp-content/uploads/bun-bo-hue-bowl.jpg", // Changed to safe working image
+        imageUrl: "https://www.hungryhuy.com/wp-content/uploads/bun-bo-hue-bowl.jpg",
         tags: ["Spicy", "Popular"],
+        recipe: [{ name: "Bún" }, { name: "Thịt bò" }, { name: "Giò heo" }, { name: "Chả cua" }, { name: "Mắm ruốc" }, { name: "Hải sản có vỏ" }],
         isAvailable: true
     },
     {
@@ -71,6 +75,7 @@ const sampleProducts = [
         time: "20-25 min",
         imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=500&fit=crop",
         tags: ["Hà Nội Authentic"],
+        recipe: [{ name: "Bún" }, { name: "Thịt heo" }, { name: "Đu đủ" }, { name: "Nước mắm" }],
         isAvailable: true
     },
     {
@@ -82,12 +87,13 @@ const sampleProducts = [
         rating: 4.6,
         review_count: 85,
         time: "10-15 min",
-        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=500&fit=crop", // Generic food
+        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=500&fit=crop",
         tags: [],
+        recipe: [{ name: "Bún" }, { name: "Cua đồng" }, { name: "Đậu hũ" }, { name: "Cà chua" }, { name: "Hải sản có vỏ" }],
         isAvailable: true
     },
 
-    // --- MÌ ---
+    // --- MÌ & CƠM ---
     {
         name: "Mì Quảng Ếch",
         category: "mi",
@@ -98,7 +104,8 @@ const sampleProducts = [
         review_count: 110,
         time: "15-20 min",
         imageUrl: "https://plus.unsplash.com/premium_photo-1664478291780-0c67f5fb15e6?w=500&h=500&fit=crop",
-        tags: [],
+        tags: ["Đặc sản"],
+        recipe: [{ name: "Mì Quảng" }, { name: "Thịt ếch" }, { name: "Đậu phộng" }, { name: "Bánh tráng" }],
         isAvailable: true
     },
     {
@@ -111,7 +118,36 @@ const sampleProducts = [
         review_count: 76,
         time: "20-25 min",
         imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&h=500&fit=crop",
-        tags: [],
+        tags: ["Hải sản"],
+        recipe: [{ name: "Mì trứng" }, { name: "Tôm" }, { name: "Mực" }, { name: "Rau cải" }, { name: "Hải sản có vỏ" }, { name: "Gluten" }],
+        isAvailable: true
+    },
+    {
+        name: "Cơm Gạo Lứt Gà Nướng",
+        category: "com",
+        description: "Cơm gạo lứt ăn kèm ức gà nướng áp chảo và rau củ luộc.",
+        restaurant: "Healthy Life",
+        price: 70000,
+        rating: 4.9,
+        review_count: 320,
+        time: "15-20 min",
+        imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop",
+        tags: ["Healthy", "Low Carb", "Eat Clean"],
+        recipe: [{ name: "Gạo lứt" }, { name: "Ức gà" }, { name: "Bông cải xanh" }, { name: "Cà rốt" }],
+        isAvailable: true
+    },
+    {
+        name: "Salad Bơ Trứng Dầu Giấm",
+        category: "salad",
+        description: "Salad rau xanh tươi mát kết hợp với bơ sáp béo ngậy và trứng luộc.",
+        restaurant: "Healthy Life",
+        price: 45000,
+        rating: 4.8,
+        review_count: 140,
+        time: "5-10 min",
+        imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&h=500&fit=crop",
+        tags: ["Healthy", "Vegetarian", "Diet"],
+        recipe: [{ name: "Xà lách" }, { name: "Bơ" }, { name: "Trứng" }, { name: "Cà chua bi" }, { name: "Dầu ô liu" }],
         isAvailable: true
     },
 
@@ -127,6 +163,7 @@ const sampleProducts = [
         time: "5-10 min",
         imageUrl: "https://images.unsplash.com/photo-1579992357154-faf4bde95b3d?w=500&h=500&fit=crop",
         tags: ["Best Seller"],
+        recipe: [{ name: "Cà phê" }, { name: "Sữa đặc" }, { name: "Sữa bò" }],
         isAvailable: true
     },
     {
@@ -140,19 +177,21 @@ const sampleProducts = [
         time: "5-10 min",
         imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&h=500&fit=crop",
         tags: ["Summer Choice"],
+        recipe: [{ name: "Trà đen" }, { name: "Đào miếng" }, { name: "Cam" }, { name: "Sả" }],
         isAvailable: true
     },
     {
-        name: "Nước Ép Cam Tươi",
+        name: "Sinh Tố Bơ Đậu Phộng",
         category: "drink",
-        description: "Cam tươi vắt nguyên chất, nhiều vitamin C.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 40000,
+        description: "Sinh tố bơ béo ngậy xay cùng bơ đậu phộng nguyên chất, rất giàu năng lượng.",
+        restaurant: "Healthy Drinks",
+        price: 50000,
         rating: 4.9,
         review_count: 150,
         time: "5-10 min",
-        imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=500&h=500&fit=crop",
-        tags: ["Healthy"],
+        imageUrl: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&h=500&fit=crop",
+        tags: ["High Protein"],
+        recipe: [{ name: "Bơ sáp" }, { name: "Bơ đậu phộng" }, { name: "Sữa tươi" }, { name: "Đậu phộng" }],
         isAvailable: true
     }
 ];

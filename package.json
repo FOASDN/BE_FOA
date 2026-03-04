@@ -9,7 +9,9 @@
     "start": "node -r tsconfig-paths/register dist/index.js",
     "test": "jest",
     "seed:vouchers": "ts-node -r tsconfig-paths/register src/seeds/voucher.seed.ts",
-    "seed:products": "ts-node -r tsconfig-paths/register src/seeds/product.seed.ts"
+    "seed:products": "ts-node -r tsconfig-paths/register src/seeds/product.seed.ts",
+    "seed:users": "ts-node -r tsconfig-paths/register src/seeds/user.seed.ts",
+    "seed:orders": "ts-node -r tsconfig-paths/register src/seeds/order.seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "npm": "10.x"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
     "cookie": "^1.0.2",

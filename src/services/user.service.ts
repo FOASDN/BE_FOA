@@ -49,10 +49,21 @@ export const updateMe = (userId: mongoose.Types.ObjectId, payload: TUpdateMePara
 
     const oldData = user.omitPassword();
 
-    const update: Partial<Record<keyof TUpdateMeParams, any>> = {};
+    const update: Partial<Record<keyof TUpdateMeParams | 'aiRecommendationsCache', any>> = {};
     if (payload.username !== undefined) update.username = payload.username;
     if (payload.phone !== undefined) update.phone = payload.phone;
     if (payload.addresses !== undefined) update.addresses = normalizeDefaultAddress(payload.addresses);
+
+    // Handle healthProfile and cache invalidation
+    if (payload.healthProfile !== undefined) {
+      update.healthProfile = {
+        allergies: payload.healthProfile.allergies || [],
+        conditions: payload.healthProfile.conditions || [],
+        dietaryGoals: payload.healthProfile.dietaryGoals || []
+      };
+      // Invalidate AI cache whenever health profile changes!
+      update.aiRecommendationsCache = null;
+    }
 
     const updated = await UserModel.findByIdAndUpdate(userId, update, {
       new: true,
