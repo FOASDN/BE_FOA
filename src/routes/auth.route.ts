@@ -9,6 +9,7 @@ import {
   resetPasswordHandler,
   sendPasswordResetHandler,
   verifyEmailHandler,
+  verifyPasswordResetOTPHandler,
 } from '@/controllers/auth.controller';
 import { authenticate } from '@/middlewares';
 
@@ -21,6 +22,7 @@ authRoutes.post('/refresh', refreshHandler);
 authRoutes.post('/verify-email', verifyEmailHandler);
 authRoutes.post('/resend-verify-email', resendVerifyEmailHandler);
 authRoutes.post('/password/forgot', sendPasswordResetHandler);
+authRoutes.post('/password/verify-otp', verifyPasswordResetOTPHandler);
 authRoutes.post('/password/reset', resetPasswordHandler);
 authRoutes.get('/me', authenticate, getMeHandler);
 authRoutes.post('/logout', authenticate, logout);

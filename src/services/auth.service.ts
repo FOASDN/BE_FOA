@@ -7,7 +7,7 @@ import { VerificationCodeType } from '@/types/verificationCode.type';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
 import { fifteenMinutesFromNow, fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
-import { getPasswordResetTemplate, getVerifyEmailOTPtemplate } from '@/utils/emailTemplates';
+import { getVerifyEmailOTPtemplate, getPasswordResetOTPtemplate } from '@/utils/emailTemplates';
 import { generateRefreshToken, hashToken, signToKen } from '@/utils/jwt';
 import { sendMail } from '@/utils/sendMail';
 import withTransaction from '@/utils/withTransaction';
@@ -229,39 +229,56 @@ export const sendPasswordResetEmail = async (email: string) => {
     created_at: { $gt: fiveMinAgo },
   });
   appAssert(count <= 1, TOO_MANY_REQUESTS, 'Too many requests. Please try again later.');
+
+  //create 6-digit verification code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
   //create verification code
   const verificationCode = await VerificationCodeModel.create({
     user_id: user._id,
     type: VerificationCodeType.FORGOT_PASSWORD,
     email: user.email,
-    expires_at: oneHourFromNow(),
+    code,
+    expires_at: fifteenMinutesFromNow(),
   });
+
   //send email with the verification code
-  const url = `${APP_ORIGIN}/password/reset?code=${verificationCode._id}&exp=${verificationCode.expires_at.getTime()}`;
   const { error } = await sendMail({
     to: user.email,
-    ...getPasswordResetTemplate(url),
+    ...getPasswordResetOTPtemplate(code),
   });
+
   appAssert(!error, INTERNAL_SERVER_ERROR, `Lỗi khi gửi email`);
   //return success message
   return true;
 };
 
-export const resetPassword = async ({ verificationCode, password }: TResetPasswordParams) => {
-  //get the verification code from db
+export const verifyPasswordResetOTP = async (email: string, code: string) => {
   const validCode = await VerificationCodeModel.findOne({
-    _id: verificationCode,
+    email,
+    code,
     type: VerificationCodeType.FORGOT_PASSWORD,
     expires_at: { $gt: new Date() },
   });
-  appAssert(validCode, NOT_FOUND, 'Mã xác thực không hợp lệ');
+  appAssert(validCode, NOT_FOUND, 'Mã xác thực không hợp lệ hoặc đã hết hạn');
+  return true;
+};
 
-  //get user by id
+export const resetPassword = async ({ email, code, password }: TResetPasswordParams) => {
+  //get the verification code from db
+  const validCode = await VerificationCodeModel.findOne({
+    email,
+    code,
+    type: VerificationCodeType.FORGOT_PASSWORD,
+    expires_at: { $gt: new Date() },
+  });
+  appAssert(validCode, NOT_FOUND, 'Mã xác thực không hợp lệ hoặc đã hết hạn');
+
   //update user password
   const updatedUser = await UserModel.findByIdAndUpdate(validCode.user_id, {
     password_hash: await hashValue(password),
   });
-  appAssert(updatedUser, INTERNAL_SERVER_ERROR, 'Lỗi khi xác thực tài khoản');
+  appAssert(updatedUser, INTERNAL_SERVER_ERROR, 'Lỗi khi đặt lại mật khẩu');
 
   //delete verification code record
   await validCode.deleteOne();

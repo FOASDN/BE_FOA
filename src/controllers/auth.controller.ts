@@ -9,6 +9,7 @@ import {
   resetPassword,
   sendPasswordResetEmail,
   verifyEmail,
+  verifyPasswordResetOTP,
 } from '@/services/auth.service';
 import { IUser } from '@/types';
 import appAssert from '@/utils/appAssert';
@@ -89,14 +90,20 @@ export const sendPasswordResetHandler = catchErrors(async (req, res) => {
 });
 
 export const resetPasswordHandler = catchErrors(async (req, res) => {
-  const { verificationCode, password, confirm_password } = req.body;
-  const request = resetPasswordValidator.parse({ verificationCode, password, confirm_password });
+  const request = resetPasswordValidator.parse(req.body);
 
   await resetPassword(request);
 
   return clearAuthCookies(res).success(OK, {
-    message: 'Password reset successfully',
+    message: 'Khôi phục mật khẩu thành công',
   });
+});
+
+export const verifyPasswordResetOTPHandler = catchErrors(async (req, res) => {
+  const { email, code } = verifyEmailValidator.parse(req.body);
+  await verifyPasswordResetOTP(email, code);
+
+  return res.success(OK, { message: 'Mã xác thực chính xác' });
 });
 
 export const getMeHandler = catchErrors(async (req, res) => {

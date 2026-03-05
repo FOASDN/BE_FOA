@@ -47,9 +47,13 @@ export const verifyEmailValidator = z.object({
 export type TVerifyEmailParams = z.infer<typeof verifyEmailValidator>;
 
 export const resetPasswordValidator = z.object({
-  verificationCode: z.string().length(24),
+  email: emailValidator,
+  code: z.string().length(6, 'Mã xác thực phải có 6 chữ số'),
   password: passwordValidator,
   confirm_password: passwordValidator,
+}).refine((data) => data.password === data.confirm_password, {
+  message: 'Mật khẩu không khớp nhau',
+  path: ['confirm_password'],
 });
 
 export type TResetPasswordParams = z.infer<typeof resetPasswordValidator>;
