@@ -1,6 +1,25 @@
 import { IProduct } from '@/types';
 import mongoose from 'mongoose';
 
+const VariantOptionSchema = new mongoose.Schema(
+  {
+    choice: { type: String, required: true, trim: true },
+    extra_price: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false }
+);
+
+const VariantGroupSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    required: { type: Boolean, default: false },
+    multiple: { type: Boolean, default: false },
+    max_choices: { type: Number, min: 1 },
+    options: { type: [VariantOptionSchema], default: [] },
+  },
+  { _id: false }
+);
+
 const ProductSchema = new mongoose.Schema<IProduct>(
   {
     name: { type: String, required: true, trim: true },
@@ -28,6 +47,7 @@ const ProductSchema = new mongoose.Schema<IProduct>(
     health_warning: { type: String },
     health_tags: [{ type: String }],
     isAvailable: { type: Boolean, default: true },
+    variants: { type: [VariantGroupSchema], default: [] },
   },
   {
     timestamps: true,
