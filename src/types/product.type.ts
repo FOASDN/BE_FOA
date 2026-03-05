@@ -6,6 +6,19 @@ export interface IProductIngredient {
   quantity: string;
 }
 
+export interface IProductVariantOption {
+  choice: string;
+  extra_price: number;
+}
+
+export interface IProductVariantGroup {
+  name: string;          // Size | Toppings | Sugar
+  required?: boolean;    // bắt buộc chọn
+  multiple?: boolean;    // cho phép chọn nhiều
+  max_choices?: number;  // giới hạn toppings
+  options: IProductVariantOption[];
+}
+
 export default interface IProduct extends mongoose.Document {
   name: string;
   description: string;
@@ -21,5 +34,7 @@ export default interface IProduct extends mongoose.Document {
   health_warning?: string;
   health_tags: string[];
   isAvailable: boolean;
-  isFavorite?: boolean; // Virtual or user-specific
+  isFavorite?: boolean;
+
+  variants?: IProductVariantGroup[];
 }
