@@ -76,11 +76,7 @@ export const updateMeValidator = z.object({
     city: z.string().trim().min(1),
     isDefault: z.boolean().optional(),
   })).max(10).optional(),
-  healthProfile: z.object({
-    allergies: z.array(z.string()).optional(),
-    conditions: z.array(z.string()).optional(),
-    dietaryGoals: z.array(z.string()).optional(),
-  }).optional(),
+
   preferences: z.object({
     dietary: z.array(z.string().trim()).optional(),
     allergies: z.array(z.string().trim()).optional(),

@@ -7,6 +7,7 @@ const OrderItemVariationSchema = new mongoose.Schema<IOrderItemVariation>(
   {
     name: { type: String, required: true },
     choice: { type: String, required: true },
+    extra_price: { type: Number, required: true, default: 0, min: 0 },
   },
   {
     _id: false,
@@ -66,6 +67,14 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     sub_total: { type: Number, validators: { min: [0, 'Sub total must be a positive number'] } },
     shipping_fee: { type: Number, default: 0, min: 0 },
     total_price: { type: Number, validators: { min: [0, 'Total price must be a positive number'] } },
+    note: {
+      type: String,
+      maxlength: 500,
+    },
+    staff_note_items: {
+      type: [String],
+      default: [],
+    },
     payment: {
       method: { type: String, required: true, enum: PaymentMethod, default: PaymentMethod.CASH_ON_DELIVERY },
       paid_at: { type: Date },

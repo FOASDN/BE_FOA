@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import { PaymentMethod, OrderStatus } from '@/types/order.type';
 import { createPaymentLink } from './payos.service';
 import { APP_ORIGIN } from '@/constants/env';
+import { parseOrderNoteForStaff } from './ai.service';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helper: Calculate item-level sub_total
@@ -17,7 +18,7 @@ import { APP_ORIGIN } from '@/constants/env';
 interface ResolvedItem {
   product_id: mongoose.Types.ObjectId;
   quantity: number;
-  variations: { name: string; choice: string }[];
+  variations: { name: string; choice: string; extra_price: number }[];
   sub_total: number;
 }
 
@@ -34,13 +35,44 @@ const resolveOrderItems = async (
     appAssert(product, NOT_FOUND, `Không tìm thấy sản phẩm với id: ${item.product_id}`);
     appAssert(product.isAvailable, BAD_REQUEST, `Sản phẩm "${product.name}" hiện không có sẵn`);
 
-    const itemSubTotal = product.price * item.quantity;
+    const normalizedVariations = (item.variations ?? []).map((selected) => {
+      const variantGroup = product.variants?.find((variant: any) => variant.name === selected.name);
+
+      appAssert(
+        variantGroup,
+        BAD_REQUEST,
+        `Biến thể "${selected.name}" không tồn tại trong sản phẩm "${product.name}"`
+      );
+
+      const matchedOption = variantGroup.options?.find((option: any) => option.choice === selected.choice);
+
+      appAssert(
+        matchedOption,
+        BAD_REQUEST,
+        `Lựa chọn "${selected.choice}" không hợp lệ cho biến thể "${selected.name}"`
+      );
+
+      return {
+        name: selected.name,
+        choice: selected.choice,
+        extra_price: matchedOption.extra_price ?? 0,
+      };
+    });
+
+    const variationExtraPerUnit = normalizedVariations.reduce(
+      (sum, variation) => sum + (variation.extra_price ?? 0),
+      0
+    );
+
+    const unitPrice = product.price + variationExtraPerUnit;
+    const itemSubTotal = unitPrice * item.quantity;
+
     sub_total += itemSubTotal;
 
     resolvedItems.push({
       product_id: new mongoose.Types.ObjectId(item.product_id),
       quantity: item.quantity,
-      variations: item.variations ?? [],
+      variations: normalizedVariations,
       sub_total: itemSubTotal,
     });
   }
@@ -119,7 +151,11 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
-    // ── 4. Create the order (Immediate creation for all methods) ──────────────
+
+    const rawNote = input.note?.trim() || undefined;
+    const staffNoteItems = rawNote ? await parseOrderNoteForStaff(rawNote) : [];
+
+    // ── 4. Create the order ───────────────────────────────────────────────────
     const [order] = await OrderModel.create(
       [
         {
@@ -133,6 +169,8 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
           sub_total,
           shipping_fee,
           total_price,
+          note: rawNote,
+          staff_note_items: staffNoteItems,
           delivery_address: {
             label: resolvedAddress.label,
             receiver_name: resolvedAddress.receiver_name,
@@ -242,7 +280,7 @@ export const updateOrderStatus = async (idOrCode: string, status: string) => {
 
   // Basic guard: once completed or cancelled, cannot change status further?
   // Depends on business logic, but usually yes.
-  if (order.status === OrderStatus.completed || order.status === OrderStatus.CANCELLED) {
+  if (order.status === OrderStatus.COMPLETED || order.status === OrderStatus.CANCELLED) {
     appAssert(false, BAD_REQUEST, 'Không thể thay đổi trạng thái đơn hàng đã hoàn thành hoặc đã hủy');
   }
 

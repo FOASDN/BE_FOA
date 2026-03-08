@@ -50,6 +50,7 @@ export const placeOrderValidator = z.object({
    * If omitted, the service will use the user's default address.
    */
   delivery_address: deliveryAddressValidator.optional(),
+  note: z.string().trim().max(500).optional(),
 });
 
 // ---- Inferred Types ----

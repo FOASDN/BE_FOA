@@ -1,5 +1,5 @@
 import { FORBIDDEN } from "@/constants/http";
-import { Role } from "@/types";
+import { Role } from "@/types/user.type";
 import appAssert from "@/utils/appAssert";
 import { Request, RequestHandler, NextFunction, Response } from "express";
 
