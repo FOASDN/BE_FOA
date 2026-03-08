@@ -9,10 +9,10 @@ import fileRoutes from './file.route';
 import userRoutes from './user.route';
 import cartRouter from './cart.route';
 import chatRoutes from './chat.route';
+import paymentRoutes from './payment.route';
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
-
 
 const appRoutes = Router();
 
@@ -32,17 +32,18 @@ appRoutes.use('/files', fileRoutes);
 appRoutes.use('/users', userRoutes);
 appRoutes.use('/cart', cartRouter);
 appRoutes.use('/chat', chatRoutes);
+appRoutes.use('/payments', paymentRoutes);
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
+  if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
 
-    const file = req.file;
-    const data = parseFormData(req.body);
+  const file = req.file;
+  const data = parseFormData(req.body);
 
-    const result = await uploadBuffer({
-        file: req.file,
-    });
+  const result = await uploadBuffer({
+    file: req.file,
+  });
 
-    return res.json(result);
+  return res.json(result);
 });
 
 export default appRoutes;
