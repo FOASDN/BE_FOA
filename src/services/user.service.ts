@@ -56,20 +56,11 @@ export const updateMe = (userId: mongoose.Types.ObjectId, payload: TUpdateMePara
     if (payload.addresses !== undefined) update.addresses = normalizeDefaultAddress(payload.addresses);
     if (payload.preferences !== undefined) {
       update.preferences = {
-        dietary:      payload.preferences.dietary      ?? (user.preferences?.dietary      ?? []),
-        allergies:    payload.preferences.allergies    ?? (user.preferences?.allergies    ?? []),
+        dietary: payload.preferences.dietary ?? (user.preferences?.dietary ?? []),
+        allergies: payload.preferences.allergies ?? (user.preferences?.allergies ?? []),
         health_goals: payload.preferences.health_goals ?? (user.preferences?.health_goals ?? []),
       };
-    }
-
-    // Handle healthProfile and cache invalidation
-    if (payload.healthProfile !== undefined) {
-      update.healthProfile = {
-        allergies: payload.healthProfile.allergies || [],
-        conditions: payload.healthProfile.conditions || [],
-        dietaryGoals: payload.healthProfile.dietaryGoals || []
-      };
-      // Invalidate AI cache whenever health profile changes!
+      // Invalidate AI cache whenever health profile/preferences changes!
       update.aiRecommendationsCache = null;
     }
 

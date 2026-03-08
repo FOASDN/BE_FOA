@@ -45,10 +45,10 @@ const seedUsers = [
     isActive: true,
     verified_at: new Date(),
     collected_points: 500,
-    healthProfile: {
+    preferences: {
       allergies: ['Hải sản có vỏ', 'Gluten'],
-      conditions: [],
-      dietaryGoals: [],
+      health_goals: [],
+      dietary: [],
     },
     addresses: [
       {
@@ -72,10 +72,10 @@ const seedUsers = [
     isActive: true,
     verified_at: new Date(),
     collected_points: 100,
-    healthProfile: {
+    preferences: {
       allergies: [],
-      conditions: ['Tiểu đường'],
-      dietaryGoals: ['Low Carb', 'Eat Clean', 'Healthy'],
+      health_goals: ['Tiểu đường'],
+      dietary: ['Low Carb', 'Eat Clean', 'Healthy'],
     },
     addresses: [],
   },
@@ -88,10 +88,10 @@ const seedUsers = [
     isActive: true,
     verified_at: new Date(),
     collected_points: 250,
-    healthProfile: {
+    preferences: {
       allergies: ['Đậu phộng', 'Sữa bò', 'Trứng'],
-      conditions: [],
-      dietaryGoals: ['High Protein'],
+      health_goals: [],
+      dietary: ['High Protein'],
     },
     addresses: [],
   },
