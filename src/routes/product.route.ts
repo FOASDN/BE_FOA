@@ -6,6 +6,7 @@ import {
   getProductByIdHandler,
   updateProductHandler,
 } from '@/controllers/product.controller';
+import { getRecommendationsHandler, getSafeFoodsHandler } from '@/controllers/recommendation.controller';
 import authenticate from '@/middlewares/authenticate';
 import authorize from '@/middlewares/authorize';
 import { Role } from '@/types/user.type';
@@ -14,14 +15,14 @@ const router = Router();
 
 // Public routes
 router.get('/', getAllProductsHandler);
-router.get('/recommendations', (req, res) => {
-  // For now, return a simple static response or top-rated products
-  // This stops the CastError from matching 'recommendations' to ':id'
-  res.json({ success: true, data: [] });
-});
+
+// AI-powered routes (authenticated)
+router.get('/recommendations', authenticate, getRecommendationsHandler);
+router.get('/safe-foods', authenticate, getSafeFoodsHandler);
+
 router.get('/:id', getProductByIdHandler);
 
-// Admin routes (should add auth/admin middleware in production)
+// Admin routes
 router.post('/', authenticate, authorize(Role.ADMIN), createProductHandler);
 router.put('/:id', authenticate, authorize(Role.ADMIN), updateProductHandler);
 router.delete('/:id', authenticate, authorize(Role.ADMIN), deleteProductHandler);

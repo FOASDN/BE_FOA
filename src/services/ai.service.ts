@@ -14,10 +14,10 @@ interface ProductForAI {
     rating: number;
 }
 
-interface HealthProfile {
+interface Preferences {
+    dietary: string[];
     allergies: string[];
-    conditions: string[];
-    dietaryGoals: string[];
+    health_goals: string[];
 }
 
 export interface AIRecommendation {
@@ -28,10 +28,15 @@ export interface AIRecommendation {
 
 export const getAIRecommendations = async (
     products: ProductForAI[],
-    healthProfile: HealthProfile,
+    preferences: Preferences,
     similarUsersTopProducts?: string[]  // Collaborative filtering context
 ): Promise<AIRecommendation[]> => {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: {
+            temperature: 0.9, // Tăng sự đa dạng cho kết quả
+        }
+    });
 
     const productList = products.map((p) => ({
         id: p._id.toString(),
@@ -52,12 +57,13 @@ ${similarUsersTopProducts.map((name, i) => `  ${i + 1}. ${name}`).join('\n')}
 Hãy xem xét những món này nếu chúng phù hợp với hồ sơ sức khỏe của người dùng hiện tại.\n`
         : '';
 
-    const prompt = `Bạn là chuyên gia dinh dưỡng. Hãy phân tích danh sách món ăn và đưa ra 6 gợi ý phù hợp nhất cho người dùng dựa trên hồ sơ sức khỏe của họ.
+    const prompt = `Bạn là chuyên gia dinh dưỡng. Hãy LỰA CHỌN NGẪU NHIÊN 6 gợi ý phù hợp nhất từ danh sách món ăn cho người dùng dựa trên hồ sơ sức khỏe.
+QUAN TRỌNG: Hãy đảm bảo sự ĐA DẠNG trong các lần gọi khác nhau, đừng luôn chọn những món giống hệt nhau nếu có nhiều món cùng phù hợp.
 
 HỒ SƠ SỨC KHỎE NGƯỜI DÙNG:
-- Dị ứng: ${healthProfile.allergies.length > 0 ? healthProfile.allergies.join(', ') : 'Không có'}
-- Bệnh lý: ${healthProfile.conditions.length > 0 ? healthProfile.conditions.join(', ') : 'Không có'}
-- Mục tiêu ăn uống: ${healthProfile.dietaryGoals.length > 0 ? healthProfile.dietaryGoals.join(', ') : 'Không có yêu cầu đặc biệt'}
+- Dị ứng: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'Không có'}
+- Chế độ ăn kiêng (Dietary): ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'Không có'}
+- Mục tiêu sức khỏe: ${preferences.health_goals.length > 0 ? preferences.health_goals.join(', ') : 'Không có'}
 ${collaborativeSection}
 DANH SÁCH MÓN ĂN:
 ${JSON.stringify(productList, null, 2)}
@@ -100,5 +106,77 @@ Chỉ trả về JSON, không giải thích thêm.`;
                 reason: 'Được đánh giá cao bởi người dùng',
                 healthScore: 7,
             }));
+    }
+};
+
+export interface AISafeFoodInsight {
+    productId: string;
+    aiReason: string;
+}
+
+export const getAISafeFoodInsights = async (
+    safeProducts: ProductForAI[],
+    preferences: Preferences
+): Promise<AISafeFoodInsight[]> => {
+    // If the list is too massive, we might want to slice it, but usually safe products are a reasonable subset.
+    // To save tokens/time, limit to top 20 safe products for AI explanation.
+    const productsToAnalyze = safeProducts.slice(0, 20);
+
+    if (productsToAnalyze.length === 0) return [];
+
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: { temperature: 0.4 }
+    });
+
+    const productList = productsToAnalyze.map((p) => ({
+        id: p._id.toString(),
+        name: p.name,
+        description: p.description,
+        ingredients: p.recipe.map((r) => r.name),
+    }));
+
+    const prompt = `Bạn là chuyên gia dinh dưỡng. Trách nhiệm của bạn là giải thích TẠI SAO các món ăn trong danh sách dưới đây lại an toàn và phù hợp với người dùng.
+TẤT CẢ các món ăn dưới đây đã được hệ thống kiểm tra và xác nhận 100% KHÔNG chứa chất gây dị ứng của người dùng.
+
+HỒ SƠ SỨC KHỎE NGƯỜI DÙNG:
+- Dị ứng: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'Không có'}
+- Chế độ ăn kiêng (Dietary): ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'Không có'}
+- Mục tiêu sức khỏe: ${preferences.health_goals.length > 0 ? preferences.health_goals.join(', ') : 'Không có'}
+
+DANH SÁCH MÓN ĂN AN TOÀN (${productList.length} món):
+${JSON.stringify(productList, null, 2)}
+
+YÊU CẦU:
+1. Viết 1 câu giải thích ngắn gọn (tối đa 25 từ) bằng TIẾNG VIỆT cho MỖI món ăn.
+2. Nội dung giải thích phải NÊU BẬT được sự liên quan giữa nguyên liệu món ăn và hồ sơ sức khỏe của người dùng (ví dụ: "Món này hoàn toàn không có đậu phộng và rất giàu đạm, phù hợp để tăng cơ").
+3. Chỉ dự đoán kết quả cho chính xác ${productList.length} món ăn được cung cấp. Cấm bỏ sót món nào.
+4. Trả về JSON theo ĐÚNG định dạng sau:
+{
+  "insights": [
+    {
+      "productId": "id của sản phẩm",
+      "aiReason": "Lý do ngắn gọn của AI"
+    }
+  ]
+}
+
+Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.`;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON in safe foods AI response');
+
+        const parsed = JSON.parse(jsonMatch[0]);
+        return parsed.insights as AISafeFoodInsight[];
+    } catch (err) {
+        console.error('Gemini Safe Foods Insight error:', err);
+        return productsToAnalyze.map(p => ({
+            productId: p._id.toString(),
+            aiReason: 'Món ăn an toàn, đã được sàng lọc không chứa thành phần gây dị ứng của bạn.'
+        }));
     }
 };

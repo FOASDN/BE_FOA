@@ -1,6 +1,6 @@
 import { EMAIL_REGEX, INTERNATIONAL_PHONE_REGEX, VIETNAM_PHONE_REGEX } from '@/constants/regex';
 import { IUser } from '@/types';
-import { IAddresses, IHealthProfile, Role } from '@/types/user.type';
+import { IAddresses, Role } from '@/types/user.type';
 import { compareValue, hashValue } from '@/utils/bcrypt';
 import mongoose from 'mongoose';
 
@@ -41,15 +41,6 @@ const PreferencesSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const HealthProfileSchema = new mongoose.Schema<IHealthProfile>(
-  {
-    allergies: [{ type: String }],
-    conditions: [{ type: String }],
-    dietaryGoals: [{ type: String }],
-  },
-  { _id: false }
-);
-
 const UserSchema = new mongoose.Schema<IUser>(
   {
     username: { type: String, required: true, trim: true },
@@ -86,13 +77,11 @@ const UserSchema = new mongoose.Schema<IUser>(
       type: PreferencesSchema,
       default: () => ({ dietary: [], allergies: [], health_goals: [] }),
     },
-    healthProfile: {
-      type: HealthProfileSchema,
-      default: () => ({ allergies: [], conditions: [], dietaryGoals: [] }),
-    },
+
     aiRecommendationsCache: {
       type: {
-        data: { type: mongoose.Schema.Types.Mixed },
+        data: { type: mongoose.Schema.Types.Mixed }, // Main AI Recommendations
+        safeFoodsData: { type: mongoose.Schema.Types.Mixed }, // Safe Foods AI Insights
         updatedAt: { type: Date }
       },
       default: null,
