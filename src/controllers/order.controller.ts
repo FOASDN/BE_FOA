@@ -23,6 +23,8 @@ export const placeOrderHandler = catchErrors(async (req, res) => {
       items: order.items,
       sub_total: order.sub_total,
       total_price: order.total_price,
+      note: order.note,
+      staff_note_items: order.staff_note_items,
       payment: order.payment,
       delivery_address: order.delivery_address,
       voucher: order.voucher,

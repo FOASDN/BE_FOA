@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ICartItem, ICartVariation } from './cart.type';
+import { ICartItem } from './cart.type';
 import IVoucher from './voucher.type';
 import IUser, { IAddresses } from './user.type';
 
@@ -8,11 +8,15 @@ export enum OrderStatus {
   CONFIRMED = 'confirmed',
   PROCESSING = 'processing',
   SHIPPING = 'shipping',
-  completed = 'completed',
+  COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
 
-export interface IOrderItemVariation extends Omit<ICartVariation, 'extra_price'> {}
+export interface IOrderItemVariation {
+  name: string;
+  choice: string;
+  extra_price: number;
+}
 
 export interface IOrderItem extends Omit<ICartItem, 'price' | 'variations'> {
   sub_total: number;
@@ -36,14 +40,16 @@ export default interface IOrder extends mongoose.Document<mongoose.Types.ObjectI
   sub_total: number;
   shipping_fee: number;
   total_price: number;
+  note?: string;
+  staff_note_items?: string[];
   payment: {
     method: PaymentMethod;
     paid_at: Date | null;
   };
   delivery_address: IDeliveryAddress;
   delivery_info: {
-    provider: IUser['_id'] | null;
-    driver: IUser['_id'] | null;
+    provider_id: IUser['_id'] | null;
+    driver_id: IUser['_id'] | null;
     shipped_at: Date | null;
     delivered_at: Date | null;
   };
