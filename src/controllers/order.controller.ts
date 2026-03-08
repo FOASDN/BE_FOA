@@ -28,6 +28,7 @@ export const placeOrderHandler = catchErrors(async (req, res) => {
       payment: order.payment,
       delivery_address: order.delivery_address,
       voucher: order.voucher,
+      checkoutUrl: (order as any).checkoutUrl,
       createdAt: (order as any).createdAt,
     },
     message: 'Đặt hàng thành công',
