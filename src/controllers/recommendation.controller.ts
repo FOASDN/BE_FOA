@@ -16,24 +16,24 @@ import { OrderStatus } from '@/types/order.type';
  */
 async function getSimilarUsersTopProducts(
     currentUserId: string,
-    healthProfile: { allergies: string[]; conditions: string[]; dietaryGoals: string[] }
+    preferences: { dietary: string[]; allergies: string[]; health_goals: string[] }
 ): Promise<string[]> {
 
-    // 1. Tìm users có ít nhất 1 điểm chung trong healthProfile
+    // 1. Tìm users có ít nhất 1 điểm chung trong preferences
     const similarUserQuery: any = { _id: { $ne: currentUserId } };
     const orConditions: any[] = [];
 
-    if (healthProfile.allergies.length > 0) {
-        orConditions.push({ 'healthProfile.allergies': { $in: healthProfile.allergies } });
+    if (preferences.allergies.length > 0) {
+        orConditions.push({ 'preferences.allergies': { $in: preferences.allergies } });
     }
-    if (healthProfile.conditions.length > 0) {
-        orConditions.push({ 'healthProfile.conditions': { $in: healthProfile.conditions } });
+    if (preferences.dietary.length > 0) {
+        orConditions.push({ 'preferences.dietary': { $in: preferences.dietary } });
     }
-    if (healthProfile.dietaryGoals.length > 0) {
-        orConditions.push({ 'healthProfile.dietaryGoals': { $in: healthProfile.dietaryGoals } });
+    if (preferences.health_goals.length > 0) {
+        orConditions.push({ 'preferences.health_goals': { $in: preferences.health_goals } });
     }
 
-    if (orConditions.length === 0) return []; // Không có healthProfile → skip
+    if (orConditions.length === 0) return []; // Không có preferences → skip
 
     similarUserQuery.$or = orConditions;
     const similarUsers = await UserModel.find(similarUserQuery).select('_id email').lean();
@@ -89,7 +89,7 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     const user = await UserModel.findById(userId);
     appAssert(user, NOT_FOUND, 'User not found');
 
-    const healthProfile = user.healthProfile || { allergies: [], conditions: [], dietaryGoals: [] };
+    const preferences = user.preferences || { dietary: [], allergies: [], health_goals: [] };
 
     // 2. Cache Check Strategy
     const latestProduct = await ProductModel.findOne({ isAvailable: true })
@@ -101,8 +101,9 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
         : 0;
 
     const cache = user.aiRecommendationsCache;
+    const forceRefresh = req.query.refresh === 'true';
 
-    if (cache && cache.data && cache.updatedAt) {
+    if (!forceRefresh && cache && cache.data && cache.updatedAt) {
         if (cache.updatedAt.getTime() > lastProductUpdatedTime) {
             console.log(`[AI Cache Hit] Returning cached recommendations for user ${user.email}`);
             return res.status(OK).json({
@@ -112,7 +113,7 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
         }
     }
 
-    console.log(`[AI Cache Miss] Generating new recommendations for user ${user.email}...`);
+    console.log(`[AI Cache Miss / Force Refresh] Generating new recommendations for user ${user.email}...`);
 
     // 3. Get Products for AI
     const dbProducts = await ProductModel.find({ isAvailable: true })
@@ -131,14 +132,25 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     }));
 
     // 4. Collaborative Filtering: get similar users' top products
-    const similarUsersTopProducts = await getSimilarUsersTopProducts(userId!.toString(), healthProfile);
+    const similarUsersTopProducts = await getSimilarUsersTopProducts(userId!.toString(), preferences);
 
     // 5. Call AI Service (passes collaborative context to Gemini)
-    const recommendations = await getAIRecommendations(
-        productsForAI,
-        healthProfile,
-        similarUsersTopProducts
-    );
+    let recommendations: any[] = [];
+    try {
+        recommendations = await getAIRecommendations(
+            productsForAI,
+            preferences,
+            similarUsersTopProducts
+        );
+    } catch (error) {
+        console.error("Gemini AI API Error in Recommendations:", error);
+        // Fallback: Just return top 6 highly rated products from productsForAI
+        recommendations = productsForAI.slice(0, 6).map(p => ({
+            productId: p._id,
+            reason: 'Sản phẩm được đánh giá cao (Gợi ý dự phòng do lỗi kết nối AI)',
+            healthScore: 80
+        }));
+    }
 
     // 6. Fetch full product data for returned IDs
     const aiProductIds = recommendations.map(r => r.productId);
@@ -164,10 +176,16 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     }).filter(item => item !== null);
 
     // 9. Save to Cache
-    await UserModel.findByIdAndUpdate(userId, {
-        aiRecommendationsCache: {
-            data: finalResult,
-            updatedAt: new Date()
+    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
+    const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
+    
+    await UserModel.updateOne({ _id: userId }, {
+        $set: {
+            'aiRecommendationsCache': {
+                ...currentCache,
+                data: finalResult,
+                updatedAt: new Date()
+            }
         }
     });
 
@@ -175,4 +193,141 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
         data: finalResult,
         message: 'Lấy danh sách gợi ý thành công'
     });
+});
+
+/**
+ * GET /products/safe-foods
+ * Trả về danh sách các món ăn AN TOÀN cho người dùng,
+ * tức là các món KHÔNG chứa thành phần mà người dùng bị dị ứng.
+ */
+export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    // 1. Get User Profile
+    const user = await UserModel.findById(userId);
+    appAssert(user, NOT_FOUND, 'User not found');
+
+    const preferences = user.preferences || { dietary: [], allergies: [], health_goals: [] };
+    const userAllergies = preferences.allergies.map((a: string) => a.toLowerCase().trim());
+
+    // 2. Cache Check Strategy
+    const latestProduct = await ProductModel.findOne({ isAvailable: true })
+        .sort({ updatedAt: -1 })
+        .select('updatedAt');
+
+    const lastProductUpdatedTime = (latestProduct as any)?.updatedAt
+        ? new Date((latestProduct as any).updatedAt).getTime()
+        : 0;
+
+    // We reuse the aiRecommendationsCache structure but store safe-foods specifically
+    // To avoid schema changes, we can store it in aiRecommendationsCache.safeFoodsData if we modify the type
+    // Or we just recalculate since safe-foods UI is accessed less frequently. 
+    // Wait, the user has `aiRecommendationsCache` which is currently an object. Let's cast it to any to add safeFoods.
+    const cache = (user as any).aiRecommendationsCache;
+    if (cache && cache.safeFoodsData && cache.updatedAt) {
+        if (cache.updatedAt.getTime() > lastProductUpdatedTime) {
+            console.log(`[SafeFoods Cache Hit] Returning cached safe foods for user ${user.email}`);
+            return res.status(OK).json(cache.safeFoodsData);
+        }
+    }
+
+    console.log(`[SafeFoods Cache Miss] Generating new AI insights for safe foods for user ${user.email}...`);
+
+    // 3. Get all available products
+    const allProducts = await ProductModel.find({ isAvailable: true })
+        .sort({ rating: -1, review_count: -1 })
+        .lean();
+
+    // 4. Rule-Based Filter: exclude products containing allergen ingredients (100% Safety Guarantee)
+    let safeProducts = allProducts;
+    let unsafeCount = 0;
+
+    if (userAllergies.length > 0) {
+        safeProducts = allProducts.filter(product => {
+            const ingredients = (product.recipe || []).map((r: any) => 
+                r.name.normalize('NFC').toLowerCase().trim()
+            );
+            
+            const hasAllergen = ingredients.some((ingredient: string) =>
+                userAllergies.some((allergy: string) => {
+                    const cleanAllergy = allergy.normalize('NFC').toLowerCase().trim();
+                    return ingredient.includes(cleanAllergy) || cleanAllergy.includes(ingredient);
+                })
+            );
+            
+            if (hasAllergen) unsafeCount++;
+            return !hasAllergen;
+        });
+    }
+
+    // Shuffle and pick 6 items to match the "AI suggestions" behavior
+    safeProducts = safeProducts.sort(() => 0.5 - Math.random()).slice(0, 6);
+
+    // 5. Get AI Insights for the Safe Products
+    const productsForAI = safeProducts.map(p => ({
+        _id: p._id.toString(),
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        tags: p.tags,
+        recipe: p.recipe,
+        price: p.price,
+        rating: p.rating
+    }));
+
+    // Import this at the top of file or use the existing import
+    const { getAISafeFoodInsights } = require('@/services/ai.service');
+    let aiInsights: any[] = [];
+    try {
+        aiInsights = await getAISafeFoodInsights(productsForAI, preferences);
+    } catch (error) {
+        console.error("Gemini AI API Error in Safe Foods:", error);
+        // Fallback: Empty insights list, default reason will be used
+        aiInsights = [];
+    }
+
+    // Create a map for quick lookup of AI reasons
+    const insightMap = new Map(aiInsights.map((i: any) => [i.productId, i.aiReason]));
+
+    // 6. Resolve image URLs
+    const imageIds = safeProducts.map(p => p.image).filter(Boolean);
+    const imageFiles = await FileModel.find({ _id: { $in: imageIds } }).lean();
+    const imageMap = new Map(imageFiles.map(f => [f._id.toString(), f.secure_url]));
+
+    const result = safeProducts.map(product => ({
+        ...product,
+        image: imageMap.get((product.image as any)?.toString() ?? '') ?? null,
+        aiReason: insightMap.get(product._id.toString()) || 'Món ăn an toàn, đã được sàng lọc không chứa thành phần gây dị ứng của bạn.'
+    }));
+
+    const responsePayload = {
+        data: result,
+        filters: {
+            allergies: preferences.allergies,
+            dietary: preferences.dietary,
+            health_goals: preferences.health_goals,
+        },
+        stats: {
+            total: allProducts.length,
+            safe: safeProducts.length,
+            excluded: unsafeCount,
+        },
+        message: `Tìm thấy ${safeProducts.length} món an toàn cho bạn (đã loại ${unsafeCount} món chứa chất gây dị ứng)`
+    };
+
+    // 7. Save to Cache
+    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
+    const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
+    
+    await UserModel.updateOne({ _id: userId }, {
+        $set: {
+            'aiRecommendationsCache': {
+                ...currentCache,
+                safeFoodsData: responsePayload,
+                updatedAt: new Date()
+            }
+        }
+    });
+
+    return res.status(OK).json(responsePayload);
 });

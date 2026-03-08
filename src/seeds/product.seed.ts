@@ -5,241 +5,416 @@ import mongoose from 'mongoose';
 import { ResourceType, FileOwnerType } from '@/types/file.type';
 
 const sampleProducts = [
-    // --- PHỞ ---
-    {
-        name: "Phở Bò Tái Lăn",
-        category: "pho",
-        description: "Phở bò tái lăn bắc bộ, thịt bò xào thơm nức mũi với tỏi và gia vị, nước dùng đậm đà.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 55000,
-        rating: 4.8,
-        review_count: 124,
-        time: "10-15 min",
-        imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop",
-        tags: ["Best Seller", "Must Try"],
-        recipe: [{ name: "Bánh phở" }, { name: "Thịt bò" }, { name: "Hành lá" }, { name: "Nước hầm xương" }],
-        isAvailable: true
-    },
-    {
-        name: "Phở Gà Ta",
-        category: "pho",
-        description: "Phở gà ta da giòn, thịt dai ngọt, nước dùng thanh trong từ xương gà hầm kỹ.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 50000,
-        rating: 4.7,
-        review_count: 98,
-        time: "10-15 min",
-        imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop",
-        tags: ["Healthy"],
-        recipe: [{ name: "Bánh phở" }, { name: "Thịt gà" }, { name: "Hành lá" }],
-        isAvailable: true
-    },
-    {
-        name: "Phở Đặc Biệt (Full Topping)",
-        category: "pho",
-        description: "Tô đặc biệt gồm tái, nạm, gầu, gân, bò viên. Ăn là ghiền.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 75000,
-        rating: 4.9,
-        review_count: 215,
-        time: "15-20 min",
-        imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500&h=500&fit=crop",
-        tags: ["Chef Choice"],
-        recipe: [{ name: "Bánh phở" }, { name: "Thịt bò" }, { name: "Bò viên" }, { name: "Gân bò" }],
-        isAvailable: true
-    },
+  // --- PHỞ ---
+  {
+    name: 'Phở Bò Tái Lăn',
+    category: 'pho',
+    description: 'Phở bò tái lăn bắc bộ, thịt bò xào thơm nức mũi với tỏi và gia vị, nước dùng đậm đà.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 55000,
+    rating: 4.8,
+    review_count: 124,
+    time: '10-15 min',
+    imageUrl: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop',
+    tags: ['Best Seller', 'Must Try'],
+    recipe: [{ name: 'Bánh phở' }, { name: 'Thịt bò' }, { name: 'Hành lá' }, { name: 'Nước hầm xương' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Phở Gà Ta',
+    category: 'pho',
+    description: 'Phở gà ta da giòn, thịt dai ngọt, nước dùng thanh trong từ xương gà hầm kỹ.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 50000,
+    rating: 4.7,
+    review_count: 98,
+    time: '10-15 min',
+    imageUrl: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&h=500&fit=crop',
+    tags: ['Healthy'],
+    recipe: [{ name: 'Bánh phở' }, { name: 'Thịt gà' }, { name: 'Hành lá' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Phở Đặc Biệt (Full Topping)',
+    category: 'pho',
+    description: 'Tô đặc biệt gồm tái, nạm, gầu, gân, bò viên. Ăn là ghiền.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 75000,
+    rating: 4.9,
+    review_count: 215,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500&h=500&fit=crop',
+    tags: ['Chef Choice'],
+    recipe: [{ name: 'Bánh phở' }, { name: 'Thịt bò' }, { name: 'Bò viên' }, { name: 'Gân bò' }],
+    isAvailable: true,
+  },
 
-    // --- BÚN ---
-    {
-        name: "Bún Bò Huế",
-        category: "bun",
-        description: "Bún bò chuẩn vị Huế với giò heo, chả cua, huyết, nước dùng cay nồng mắm ruốc.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 55000,
-        rating: 4.8,
-        review_count: 340,
-        time: "10-15 min",
-        imageUrl: "https://www.hungryhuy.com/wp-content/uploads/bun-bo-hue-bowl.jpg",
-        tags: ["Spicy", "Popular"],
-        recipe: [{ name: "Bún" }, { name: "Thịt bò" }, { name: "Giò heo" }, { name: "Chả cua" }, { name: "Mắm ruốc" }, { name: "Hải sản có vỏ" }],
-        isAvailable: true
-    },
-    {
-        name: "Bún Chả Hà Nội",
-        category: "bun",
-        description: "Chả nướng than hoa thơm lừng, nước mắm chua ngọt, ăn kèm đu đủ và rau sống.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 60000,
-        rating: 4.9,
-        review_count: 180,
-        time: "20-25 min",
-        imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=500&fit=crop",
-        tags: ["Hà Nội Authentic"],
-        recipe: [{ name: "Bún" }, { name: "Thịt heo" }, { name: "Đu đủ" }, { name: "Nước mắm" }],
-        isAvailable: true
-    },
-    {
-        name: "Bún Riêu Cua",
-        category: "bun",
-        description: "Bún riêu cua đồng, gạch cua béo ngậy, đậu hũ chiên giòn, cà chua.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 45000,
-        rating: 4.6,
-        review_count: 85,
-        time: "10-15 min",
-        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=500&fit=crop",
-        tags: [],
-        recipe: [{ name: "Bún" }, { name: "Cua đồng" }, { name: "Đậu hũ" }, { name: "Cà chua" }, { name: "Hải sản có vỏ" }],
-        isAvailable: true
-    },
+  // --- BÚN ---
+  {
+    name: 'Bún Bò Huế',
+    category: 'bun',
+    description: 'Bún bò chuẩn vị Huế với giò heo, chả cua, huyết, nước dùng cay nồng mắm ruốc.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 55000,
+    rating: 4.8,
+    review_count: 340,
+    time: '10-15 min',
+    imageUrl: 'https://www.hungryhuy.com/wp-content/uploads/bun-bo-hue-bowl.jpg',
+    tags: ['Spicy', 'Popular'],
+    recipe: [
+      { name: 'Bún' },
+      { name: 'Thịt bò' },
+      { name: 'Giò heo' },
+      { name: 'Chả cua' },
+      { name: 'Mắm ruốc' },
+      { name: 'Hải sản có vỏ' },
+    ],
+    isAvailable: true,
+  },
+  {
+    name: 'Bún Chả Hà Nội',
+    category: 'bun',
+    description: 'Chả nướng than hoa thơm lừng, nước mắm chua ngọt, ăn kèm đu đủ và rau sống.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 60000,
+    rating: 4.9,
+    review_count: 180,
+    time: '20-25 min',
+    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=500&h=500&fit=crop',
+    tags: ['Hà Nội Authentic'],
+    recipe: [{ name: 'Bún' }, { name: 'Thịt heo' }, { name: 'Đu đủ' }, { name: 'Nước mắm' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Bún Riêu Cua',
+    category: 'bun',
+    description: 'Bún riêu cua đồng, gạch cua béo ngậy, đậu hũ chiên giòn, cà chua.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 45000,
+    rating: 4.6,
+    review_count: 85,
+    time: '10-15 min',
+    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=500&fit=crop',
+    tags: [],
+    recipe: [{ name: 'Bún' }, { name: 'Cua đồng' }, { name: 'Đậu hũ' }, { name: 'Cà chua' }, { name: 'Hải sản có vỏ' }],
+    isAvailable: true,
+  },
 
-    // --- MÌ & CƠM ---
-    {
-        name: "Mì Quảng Ếch",
-        category: "mi",
-        description: "Mì quảng ếch đậm đà hương vị miền Trung, thịt ếch chắc ngọt, nước nhưn sền sệt.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 55000,
-        rating: 4.7,
-        review_count: 110,
-        time: "15-20 min",
-        imageUrl: "https://plus.unsplash.com/premium_photo-1664478291780-0c67f5fb15e6?w=500&h=500&fit=crop",
-        tags: ["Đặc sản"],
-        recipe: [{ name: "Mì Quảng" }, { name: "Thịt ếch" }, { name: "Đậu phộng" }, { name: "Bánh tráng" }],
-        isAvailable: true
-    },
-    {
-        name: "Mì Xào Giòn Hải Sản",
-        category: "mi",
-        description: "Mì chiên giòn rụm, sốt hải sản tôm mực rau củ tươi ngon.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 65000,
-        rating: 4.5,
-        review_count: 76,
-        time: "20-25 min",
-        imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&h=500&fit=crop",
-        tags: ["Hải sản"],
-        recipe: [{ name: "Mì trứng" }, { name: "Tôm" }, { name: "Mực" }, { name: "Rau cải" }, { name: "Hải sản có vỏ" }, { name: "Gluten" }],
-        isAvailable: true
-    },
-    {
-        name: "Cơm Gạo Lứt Gà Nướng",
-        category: "com",
-        description: "Cơm gạo lứt ăn kèm ức gà nướng áp chảo và rau củ luộc.",
-        restaurant: "Healthy Life",
-        price: 70000,
-        rating: 4.9,
-        review_count: 320,
-        time: "15-20 min",
-        imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop",
-        tags: ["Healthy", "Low Carb", "Eat Clean"],
-        recipe: [{ name: "Gạo lứt" }, { name: "Ức gà" }, { name: "Bông cải xanh" }, { name: "Cà rốt" }],
-        isAvailable: true
-    },
-    {
-        name: "Salad Bơ Trứng Dầu Giấm",
-        category: "salad",
-        description: "Salad rau xanh tươi mát kết hợp với bơ sáp béo ngậy và trứng luộc.",
-        restaurant: "Healthy Life",
-        price: 45000,
-        rating: 4.8,
-        review_count: 140,
-        time: "5-10 min",
-        imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&h=500&fit=crop",
-        tags: ["Healthy", "Vegetarian", "Diet"],
-        recipe: [{ name: "Xà lách" }, { name: "Bơ" }, { name: "Trứng" }, { name: "Cà chua bi" }, { name: "Dầu ô liu" }],
-        isAvailable: true
-    },
+  // --- MÌ & CƠM ---
+  {
+    name: 'Mì Quảng Ếch',
+    category: 'mi',
+    description: 'Mì quảng ếch đậm đà hương vị miền Trung, thịt ếch chắc ngọt, nước nhưn sền sệt.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 55000,
+    rating: 4.7,
+    review_count: 110,
+    time: '15-20 min',
+    imageUrl: 'https://plus.unsplash.com/premium_photo-1664478291780-0c67f5fb15e6?w=500&h=500&fit=crop',
+    tags: ['Đặc sản'],
+    recipe: [{ name: 'Mì Quảng' }, { name: 'Thịt ếch' }, { name: 'Đậu phộng' }, { name: 'Bánh tráng' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Mì Xào Giòn Hải Sản',
+    category: 'mi',
+    description: 'Mì chiên giòn rụm, sốt hải sản tôm mực rau củ tươi ngon.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 65000,
+    rating: 4.5,
+    review_count: 76,
+    time: '20-25 min',
+    imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&h=500&fit=crop',
+    tags: ['Hải sản'],
+    recipe: [
+      { name: 'Mì trứng' },
+      { name: 'Tôm' },
+      { name: 'Mực' },
+      { name: 'Rau cải' },
+      { name: 'Hải sản có vỏ' },
+      { name: 'Gluten' },
+    ],
+    isAvailable: true,
+  },
+  {
+    name: 'Cơm Gạo Lứt Gà Nướng',
+    category: 'com',
+    description: 'Cơm gạo lứt ăn kèm ức gà nướng áp chảo và rau củ luộc.',
+    restaurant: 'Healthy Life',
+    price: 70000,
+    rating: 4.9,
+    review_count: 320,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop',
+    tags: ['Healthy', 'Low Carb', 'Eat Clean'],
+    recipe: [{ name: 'Gạo lứt' }, { name: 'Ức gà' }, { name: 'Bông cải xanh' }, { name: 'Cà rốt' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Salad Bơ Trứng Dầu Giấm',
+    category: 'salad',
+    description: 'Salad rau xanh tươi mát kết hợp với bơ sáp béo ngậy và trứng luộc.',
+    restaurant: 'Healthy Life',
+    price: 45000,
+    rating: 4.8,
+    review_count: 140,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&h=500&fit=crop',
+    tags: ['Healthy', 'Vegetarian', 'Diet'],
+    recipe: [{ name: 'Xà lách' }, { name: 'Bơ' }, { name: 'Trứng' }, { name: 'Cà chua bi' }, { name: 'Dầu ô liu' }],
+    isAvailable: true,
+  },
 
-    // --- ĐỒ UỐNG ---
-    {
-        name: "Cà Phê Sữa Đá",
-        category: "drink",
-        description: "Cà phê phin truyền thống pha với sữa đặc ngọt ngào, đậm đà tỉnh táo.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 25000,
-        rating: 5.0,
-        review_count: 500,
-        time: "5-10 min",
-        imageUrl: "https://images.unsplash.com/photo-1579992357154-faf4bde95b3d?w=500&h=500&fit=crop",
-        tags: ["Best Seller"],
-        recipe: [{ name: "Cà phê" }, { name: "Sữa đặc" }, { name: "Sữa bò" }],
-        isAvailable: true
-    },
-    {
-        name: "Trà Đào Cam Sả",
-        category: "drink",
-        description: "Trà đào thanh mát kết hợp vị chua của cam và hương thơm của sả.",
-        restaurant: "Tiệm Phở Ngon",
-        price: 35000,
-        rating: 4.8,
-        review_count: 230,
-        time: "5-10 min",
-        imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&h=500&fit=crop",
-        tags: ["Summer Choice"],
-        recipe: [{ name: "Trà đen" }, { name: "Đào miếng" }, { name: "Cam" }, { name: "Sả" }],
-        isAvailable: true
-    },
-    {
-        name: "Sinh Tố Bơ Đậu Phộng",
-        category: "drink",
-        description: "Sinh tố bơ béo ngậy xay cùng bơ đậu phộng nguyên chất, rất giàu năng lượng.",
-        restaurant: "Healthy Drinks",
-        price: 50000,
-        rating: 4.9,
-        review_count: 150,
-        time: "5-10 min",
-        imageUrl: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&h=500&fit=crop",
-        tags: ["High Protein"],
-        recipe: [{ name: "Bơ sáp" }, { name: "Bơ đậu phộng" }, { name: "Sữa tươi" }, { name: "Đậu phộng" }],
-        isAvailable: true
-    }
+  // --- ĐỒ UỐNG ---
+  {
+    name: 'Cà Phê Sữa Đá',
+    category: 'drink',
+    description: 'Cà phê phin truyền thống pha với sữa đặc ngọt ngào, đậm đà tỉnh táo.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 25000,
+    rating: 5.0,
+    review_count: 500,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1579992357154-faf4bde95b3d?w=500&h=500&fit=crop',
+    tags: ['Best Seller'],
+    recipe: [{ name: 'Cà phê' }, { name: 'Sữa đặc' }, { name: 'Sữa bò' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Trà Đào Cam Sả',
+    category: 'drink',
+    description: 'Trà đào thanh mát kết hợp vị chua của cam và hương thơm của sả.',
+    restaurant: 'Tiệm Phở Ngon',
+    price: 35000,
+    rating: 4.8,
+    review_count: 230,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&h=500&fit=crop',
+    tags: ['Summer Choice'],
+    recipe: [{ name: 'Trà đen' }, { name: 'Đào miếng' }, { name: 'Cam' }, { name: 'Sả' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Sinh Tố Bơ Đậu Phộng',
+    category: 'drink',
+    description: 'Sinh tố bơ béo ngậy xay cùng bơ đậu phộng nguyên chất, rất giàu năng lượng.',
+    restaurant: 'Healthy Drinks',
+    price: 50000,
+    rating: 4.9,
+    review_count: 150,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&h=500&fit=crop',
+    tags: ['High Protein'],
+    recipe: [{ name: 'Bơ sáp' }, { name: 'Bơ đậu phộng' }, { name: 'Sữa tươi' }, { name: 'Đậu phộng' }],
+    isAvailable: true,
+  },
+
+  // --- MÓN MỚI (ĐA DẠNG HÓA AI) ---
+  {
+    name: 'Cơm Tấm Sườn Bì Chả',
+    category: 'com',
+    description: 'Cơm tấm truyền thống Sài Gòn, sườn nướng mỡ hành thơm lừng, chả cua và bì heo.',
+    restaurant: 'Cơm Tấm Sài Gòn',
+    price: 65000,
+    rating: 4.8,
+    review_count: 512,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1614917409259-8642ca858074?w=500&h=500&fit=crop',
+    tags: ['Best Seller'],
+    recipe: [{ name: 'Gạo tấm' }, { name: 'Sườn heo' }, { name: 'Bì heo' }, { name: 'Trứng' }, { name: 'Mỡ hành' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Bún Đậu Mắm Tôm (Đầy đủ)',
+    category: 'bun',
+    description: 'Bún đậu mắm tôm chuẩn vị Hà Nội với thịt luộc, chả cốm, nem rán và mắm tôm Thanh Hóa.',
+    restaurant: 'Bún Đậu Phố Cổ',
+    price: 75000,
+    rating: 4.7,
+    review_count: 890,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1627308595171-d1b5d6721b67?w=500&h=500&fit=crop',
+    tags: ['Hà Nội Authentic'],
+    recipe: [
+      { name: 'Bún lá' },
+      { name: 'Đậu hũ' },
+      { name: 'Thịt heo luộc' },
+      { name: 'Chả cốm' },
+      { name: 'Mắm tôm' },
+      { name: 'Gluten' },
+    ],
+    isAvailable: true,
+  },
+  {
+    name: 'Salad Ức Gà Nướng Keto',
+    category: 'salad',
+    description: 'Salad chuyên dụng cho người ăn Keto, ít tinh bột, giàu protein tự nhiên từ ức gà.',
+    restaurant: 'Healthy Life',
+    price: 55000,
+    rating: 4.9,
+    review_count: 210,
+    time: '10-15 min',
+    imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&h=500&fit=crop',
+    tags: ['Keto', 'High Protein', 'Low Carb'],
+    recipe: [{ name: 'Xà lách' }, { name: 'Ức gà' }, { name: 'Dầu ô liu' }, { name: 'Hạnh nhân' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Miến Trộn Hải Sản Thái Spicy',
+    category: 'mi',
+    description: 'Miến dong trộn chua cay kiểu Thái, cực cuốn với tôm, mực tươi sống.',
+    restaurant: 'Thai Côn',
+    price: 85000,
+    rating: 4.6,
+    review_count: 145,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?w=500&h=500&fit=crop',
+    tags: ['Spicy', 'Hải sản'],
+    recipe: [
+      { name: 'Miến dong' },
+      { name: 'Tôm' },
+      { name: 'Mực' },
+      { name: 'Hải sản có vỏ' },
+      { name: 'Chanh thái' },
+    ],
+    isAvailable: true,
+  },
+  {
+    name: 'Bún Chay Nấm Thập Cẩm',
+    category: 'bun',
+    description: 'Bún nước lèo nêm từ rau củ ngọt thanh, ăn kèm đủ loại nấm tươi và mộc chay.',
+    restaurant: 'Chay Tịnh Tâm',
+    price: 45000,
+    rating: 4.8,
+    review_count: 120,
+    time: '10-15 min',
+    imageUrl: 'https://images.unsplash.com/photo-1548943487-a2e4e43b4859?w=500&h=500&fit=crop',
+    tags: ['Ăn chay', 'Thuần chay', 'Healthy'],
+    recipe: [{ name: 'Bún' }, { name: 'Nấm rơm' }, { name: 'Nấm đùi gà' }, { name: 'Đậu hũ' }, { name: 'Đậu nành' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Cơm Gạo Lứt Cá Hồi Áp Chảo',
+    category: 'com',
+    description: 'Cá hồi Na Uy giàu Omega-3 áp chảo vừa tới, ăn kèm cơm gạo lứt và salad nhỏ.',
+    restaurant: 'Healthy Life',
+    price: 120000,
+    rating: 4.9,
+    review_count: 450,
+    time: '20-25 min',
+    imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&h=500&fit=crop',
+    tags: ['Healthy', 'Pescatarian', 'High Protein'],
+    recipe: [{ name: 'Gạo lứt' }, { name: 'Cá hồi' }, { name: 'Măng tây' }, { name: 'Chanh leo' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Cà Ri Gà Cốt Dừa (Không Gluten)',
+    category: 'com',
+    description: 'Cà ri gà hầm nhừ với cốt dừa béo ngậy, dùng bột gạo làm sánh, 100% Gluten-free.',
+    restaurant: 'Món Ấn Gia Truyền',
+    price: 65000,
+    rating: 4.5,
+    review_count: 90,
+    time: '15-20 min',
+    imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&h=500&fit=crop',
+    tags: ['Không gluten'],
+    recipe: [{ name: 'Thịt gà' }, { name: 'Nước cốt dừa' }, { name: 'Khoai lang' }, { name: 'Bột gạo' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Mì Ý Tôm Sốt Pesto Chay',
+    category: 'mi',
+    description: 'Mì spaghetti Ý sốt lá húng quế hạt điều béo vừa phải, không chứa sữa bò.',
+    restaurant: 'Pasta Corner',
+    price: 85000,
+    rating: 4.7,
+    review_count: 231,
+    time: '20-25 min',
+    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&h=500&fit=crop',
+    tags: ['Thuần chay', 'Gluten'],
+    recipe: [{ name: 'Mì Ý' }, { name: 'Húng quế' }, { name: 'Hạt điều' }, { name: 'Dầu ô liu' }, { name: 'Gluten' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Nước Ép Cần Tây mix Táo Xanh',
+    category: 'drink',
+    description: 'Nước ép detox tốt nhất cho mùa hè, đốt mỡ thừa, thanh lọc cơ thể.',
+    restaurant: 'Healthy Drinks',
+    price: 45000,
+    rating: 4.8,
+    review_count: 312,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&h=500&fit=crop',
+    tags: ['Healthy', 'Diet', 'Thuần chay'],
+    recipe: [{ name: 'Cần tây' }, { name: 'Táo xanh' }, { name: 'Chanh' }],
+    isAvailable: true,
+  },
+  {
+    name: 'Sữa Chua Hy Lạp Trái Cây',
+    category: 'drink',
+    description: 'Sữa chua Hy Lạp đặc sánh, cao đạm, ăn kèm quả mọng tươi và hạt mixed nuts.',
+    restaurant: 'Healthy Life',
+    price: 60000,
+    rating: 4.9,
+    review_count: 420,
+    time: '5-10 min',
+    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&h=500&fit=crop',
+    tags: ['Healthy', 'High Protein'],
+    recipe: [
+      { name: 'Sữa chua' },
+      { name: 'Sữa bò' },
+      { name: 'Dâu tây' },
+      { name: 'Hạt điều' },
+      { name: 'Hạnh nhân' },
+    ],
+    isAvailable: true,
+  },
 ];
 
 async function seedProducts() {
-    try {
-        await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-        // Clear existing data
-        await ProductModel.deleteMany({});
-        await FileModel.deleteMany({ owner_type: FileOwnerType.PRODUCT }); // Only delete product files
-        console.log('Cleared existing products and their files');
+    // Clear existing data
+    await ProductModel.deleteMany({});
+    await FileModel.deleteMany({ owner_type: FileOwnerType.PRODUCT }); // Only delete product files
+    console.log('Cleared existing products and their files');
 
-        const products = [];
+    const products = [];
 
-        for (const item of sampleProducts) {
-            const productId = new mongoose.Types.ObjectId();
-            const { imageUrl, ...productData } = item;
+    for (const item of sampleProducts) {
+      const productId = new mongoose.Types.ObjectId();
+      const { imageUrl, ...productData } = item;
 
-            // Create fake file for the image
-            const file = await FileModel.create({
-                public_id: `product_${productId}_${Date.now()}`,
-                secure_url: imageUrl,
-                resource_type: ResourceType.IMAGE,
-                width: 500,
-                height: 500,
-                bytes: 1024,
-                format: 'jpg',
-                folder: 'products',
-                owner_id: productId,
-                owner_type: FileOwnerType.PRODUCT
-            });
+      // Create fake file for the image
+      const file = await FileModel.create({
+        public_id: `product_${productId}_${Date.now()}`,
+        secure_url: imageUrl,
+        resource_type: ResourceType.IMAGE,
+        width: 500,
+        height: 500,
+        bytes: 1024,
+        format: 'jpg',
+        folder: 'products',
+        owner_id: productId,
+        owner_type: FileOwnerType.PRODUCT,
+      });
 
-            products.push({
-                _id: productId,
-                ...productData,
-                image: file._id
-            });
-        }
-
-        const result = await ProductModel.insertMany(products);
-        console.log(`✅ Successfully seeded ${result.length} products with images`);
-
-        process.exit(0);
-    } catch (error) {
-        console.error('❌ Error seeding products:', error);
-        process.exit(1);
+      products.push({
+        _id: productId,
+        ...productData,
+        image: file._id,
+      });
     }
+
+    const result = await ProductModel.insertMany(products);
+    console.log(`✅ Successfully seeded ${result.length} products with images`);
+
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error seeding products:', error);
+    process.exit(1);
+  }
 }
 
 seedProducts();
