@@ -37,3 +37,6 @@ export const CLOUDINARY_API_SECRET = getEnv('CLOUDINARY_API_SECRET');
 
 // gemini ai
 export const GEMINI_API_KEY = getEnv('GEMINI_API_KEY');
+
+// groq ai
+export const GROQ_API_KEY = getEnv('GROQ_API_KEY');

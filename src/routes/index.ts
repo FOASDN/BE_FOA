@@ -8,12 +8,17 @@ import orderRoutes from './order.route';
 import fileRoutes from './file.route';
 import userRoutes from './user.route';
 import cartRouter from './cart.route';
+import chatRoutes from './chat.route';
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
 
 
 const appRoutes = Router();
+
+appRoutes.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
 
 appRoutes.use('/auth', authRoutes);
 appRoutes.use('/admin', adminRoutes);
@@ -26,6 +31,7 @@ appRoutes.use('/orders', orderRoutes);
 appRoutes.use('/files', fileRoutes);
 appRoutes.use('/users', userRoutes);
 appRoutes.use('/cart', cartRouter);
+appRoutes.use('/chat', chatRoutes);
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
 
