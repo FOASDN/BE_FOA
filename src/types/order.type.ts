@@ -23,6 +23,7 @@ export enum PaymentMethod {
   CREDIT_CARD = 'credit_card',
   PAYPAL = 'paypal',
   CASH_ON_DELIVERY = 'cash_on_delivery',
+  BANK_TRANSFER = 'bank_transfer',
 }
 
 export interface IDeliveryAddress extends Omit<IAddresses, 'isDefault'> {}
@@ -39,6 +40,7 @@ export default interface IOrder extends mongoose.Document<mongoose.Types.ObjectI
   payment: {
     method: PaymentMethod;
     paid_at: Date | null;
+    payos_order_code?: number | null;
   };
   delivery_address: IDeliveryAddress;
   delivery_info: {

@@ -7,6 +7,8 @@ import { validateVoucher } from './voucher.service';
 import { TPlaceOrderValidator } from '@/validators/order.validator';
 import mongoose from 'mongoose';
 import { PaymentMethod, OrderStatus } from '@/types/order.type';
+import { createPaymentLink } from './payos.service';
+import { APP_ORIGIN } from '@/constants/env';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helper: Calculate item-level sub_total
@@ -117,7 +119,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
-    // ── 4. Create the order ───────────────────────────────────────────────────
+    // ── 4. Create the order (Immediate creation for all methods) ──────────────
     const [order] = await OrderModel.create(
       [
         {
@@ -151,11 +153,30 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
       { session }
     );
 
-    // ── 5. Optionally clear BE cart ───────────────────────────────────────────
-    // Soft-clear: remove items that were ordered (non-blocking)
-    await CartModel.findOneAndUpdate({ user_id: userId }, { $set: { items: [] } }, { session }).catch(() => {
-      // Cart clear is best-effort; do not fail the order
-    });
+    // ── 5. Handle PayOS if Bank Transfer ─────────────────────────────────────
+    if (payment_method === PaymentMethod.BANK_TRANSFER) {
+      const numericOrderCode = Number(String(Date.now()).slice(-9));
+
+      const returnUrl = `${APP_ORIGIN}/success?code=${order.code}`;
+      const cancelUrl = `${APP_ORIGIN}/checkout`;
+
+      // Update order with numeric code for PayOS mapping
+      order.payment.payos_order_code = numericOrderCode;
+      await order.save({ session });
+
+      const paymentLink = await createPaymentLink(
+        numericOrderCode,
+        order.total_price,
+        `Thanh toan ${order.code}`,
+        returnUrl,
+        cancelUrl
+      );
+
+      return {
+        ...order.toObject(),
+        checkoutUrl: paymentLink.checkoutUrl,
+      };
+    }
 
     return order;
   });
@@ -192,7 +213,14 @@ export const getOrders = async (filters: any = {}) => {
  * Get order detail by ID or Code
  */
 export const getOrderById = async (idOrCode: string) => {
-  const query = mongoose.Types.ObjectId.isValid(idOrCode) ? { _id: idOrCode } : { code: idOrCode };
+  const isObjectId = mongoose.Types.ObjectId.isValid(idOrCode);
+  const isNumeric = !isNaN(Number(idOrCode));
+
+  const query = isObjectId
+    ? { _id: idOrCode }
+    : isNumeric
+      ? { $or: [{ code: idOrCode }, { 'payment.payos_order_code': Number(idOrCode) }] }
+      : { code: idOrCode };
 
   const order = await OrderModel.findOne(query)
     .populate('user_id', 'username email phone')
@@ -220,5 +248,21 @@ export const updateOrderStatus = async (idOrCode: string, status: string) => {
 
   order.status = status as any;
   await order.save();
+  return order;
+};
+
+/**
+ * Handle confirmation of payment (webhook)
+ */
+export const confirmPayment = async (orderCode: number) => {
+  const order = await OrderModel.findOne({ 'payment.payos_order_code': orderCode });
+  appAssert(order, NOT_FOUND, 'Không tìm thấy đơn hàng tương ứng với mã thanh toán');
+
+  if (order.status === OrderStatus.PENDING) {
+    order.status = OrderStatus.CONFIRMED;
+    order.payment.paid_at = new Date();
+    await order.save();
+  }
+
   return order;
 };

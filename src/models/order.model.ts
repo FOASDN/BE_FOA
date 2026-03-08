@@ -69,6 +69,7 @@ const OrderSchema = new mongoose.Schema<IOrder>(
     payment: {
       method: { type: String, required: true, enum: PaymentMethod, default: PaymentMethod.CASH_ON_DELIVERY },
       paid_at: { type: Date },
+      payos_order_code: { type: Number, unique: true, sparse: true },
     },
     delivery_address: { type: DeliveryAddressSchema, required: true },
     delivery_info: { type: DeliveryInfoSchema, required: true },
