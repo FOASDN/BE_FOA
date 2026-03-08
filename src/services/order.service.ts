@@ -151,7 +151,6 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
-
     const rawNote = input.note?.trim() || undefined;
     const staffNoteItems = rawNote ? await parseOrderNoteForStaff(rawNote) : [];
 
@@ -193,7 +192,9 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
 
     // ── 5. Handle PayOS if Bank Transfer ─────────────────────────────────────
     if (payment_method === PaymentMethod.BANK_TRANSFER) {
-      const numericOrderCode = Number(String(Date.now()).slice(-9));
+      console.log('💳 Handling PayOS payment for order:', order.code);
+      const numericOrderCode = Date.now();
+      console.log('🔢 Generated numeric order code:', numericOrderCode);
 
       const returnUrl = `${APP_ORIGIN}/success?code=${order.code}`;
       const cancelUrl = `${APP_ORIGIN}/checkout`;
@@ -201,21 +202,29 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
       // Update order with numeric code for PayOS mapping
       order.payment.payos_order_code = numericOrderCode;
       await order.save({ session });
+      console.log('✅ Order updated with PayOS numeric code');
 
-      const paymentLink = await createPaymentLink(
-        numericOrderCode,
-        order.total_price,
-        `Thanh toan ${order.code}`,
-        returnUrl,
-        cancelUrl
-      );
+      try {
+        const paymentLink = await createPaymentLink(
+          numericOrderCode,
+          order.total_price,
+          `Thanh toan ${order.code}`,
+          returnUrl,
+          cancelUrl
+        );
+        console.log('🔗 PayOS link created:', paymentLink.checkoutUrl);
 
-      return {
-        ...order.toObject(),
-        checkoutUrl: paymentLink.checkoutUrl,
-      };
+        return {
+          ...order.toObject(),
+          checkoutUrl: paymentLink.checkoutUrl,
+        };
+      } catch (payosError) {
+        console.error('❌ PayOS link creation failed:', payosError);
+        throw payosError;
+      }
     }
 
+    console.log('✅ COD order placed successfully');
     return order;
   });
 };
