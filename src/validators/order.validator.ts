@@ -10,7 +10,6 @@ export const deliveryAddressValidator = z.object({
   receiver_name: z.string().min(1, 'Tên người nhận không được để trống'),
   phone: z.string().min(1, 'Số điện thoại không được để trống'),
   detail: z.string().min(1, 'Địa chỉ chi tiết không được để trống'),
-  ward: z.string().min(1, 'Phường/Xã không được để trống'),
   district: z.string().min(1, 'Quận/Huyện không được để trống'),
   city: z.string().min(1, 'Thành phố không được để trống'),
 });

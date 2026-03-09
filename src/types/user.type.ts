@@ -11,7 +11,6 @@ export interface IAddresses {
   receiver_name: string;
   phone: string;
   detail: string;
-  ward: string;
   district: string;
   city: string;
   isDefault: boolean;

@@ -22,7 +22,6 @@ const AddressSchema = new mongoose.Schema<IAddresses>(
       },
     },
     detail: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
     district: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     isDefault: { type: Boolean, default: false },

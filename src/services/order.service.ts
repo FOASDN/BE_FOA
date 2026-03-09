@@ -12,6 +12,36 @@ import { APP_ORIGIN } from '@/constants/env';
 import { parseOrderNoteForStaff } from './ai.service';
 
 // ────────────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shipping utility
+// ────────────────────────────────────────────────────────────────────────────
+
+const INNER_DISTRICTS = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn'];
+const OUTER_DISTRICTS = ['Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
+const DELIVERABLE_CITY = 'Đà Nẵng';
+
+export function calculateShippingFee(district: string, city: string, subtotal: number): { fee: number; blocked: boolean; reason?: string } {
+  const normalCity = city.trim();
+  const normalDistrict = district.trim();
+
+  if (normalCity.toLowerCase() !== DELIVERABLE_CITY.toLowerCase()) {
+    return { fee: 0, blocked: true, reason: 'Hiện tại chỉ giao hàng trong khu vực Đà Nẵng' };
+  }
+
+  const isInner = INNER_DISTRICTS.some((d) => d.toLowerCase() === normalDistrict.toLowerCase());
+  const isOuter = OUTER_DISTRICTS.some((d) => d.toLowerCase() === normalDistrict.toLowerCase());
+
+  if (!isInner && !isOuter) {
+    return { fee: 0, blocked: true, reason: `Khu vực "${normalDistrict}" nằm ngoài vùng giao hàng` };
+  }
+
+  if (subtotal >= 300_000) return { fee: 0, blocked: false };
+  if (isInner) return { fee: 15_000, blocked: false };
+  return { fee: 25_000, blocked: false };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // Helper: Calculate item-level sub_total
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -151,6 +181,18 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
+    // Validate shipping fee is correct for the destination
+    const shippingResult = calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
+    appAssert(
+      !shippingResult.blocked,
+      BAD_REQUEST,
+      shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng'
+    );
+    appAssert(
+      shippingResult.fee === shipping_fee,
+      BAD_REQUEST,
+      `Phí giao hàng không khớp (Server tính: ${shippingResult.fee}đ, Client gửi: ${shipping_fee}đ)`
+    );
     const rawNote = input.note?.trim() || undefined;
     const staffNoteItems = rawNote ? await parseOrderNoteForStaff(rawNote) : [];
 
@@ -175,7 +217,6 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
             receiver_name: resolvedAddress.receiver_name,
             phone: resolvedAddress.phone,
             detail: resolvedAddress.detail,
-            ward: resolvedAddress.ward,
             district: resolvedAddress.district,
             city: resolvedAddress.city,
           },
