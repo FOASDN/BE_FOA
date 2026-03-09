@@ -71,7 +71,6 @@ export const updateMeValidator = z.object({
     receiver_name: z.string().trim().min(1),
     phone: phone.optional(),
     detail: z.string().trim().min(1),
-    ward: z.string().trim().min(1),
     district: z.string().trim().min(1),
     city: z.string().trim().min(1),
     isDefault: z.boolean().optional(),
