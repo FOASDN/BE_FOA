@@ -334,6 +334,16 @@ export const updateOrderStatus = async (idOrCode: string, status: string) => {
     appAssert(false, BAD_REQUEST, 'Không thể thay đổi trạng thái đơn hàng đã hoàn thành hoặc đã hủy');
   }
 
+  // FSS-35: Award points when order is completed
+  if (status === OrderStatus.COMPLETED) {
+    const pointsToAward = Math.floor(order.total_price / 10000);
+    if (pointsToAward > 0) {
+      await UserModel.findByIdAndUpdate(order.user_id, {
+        $inc: { collected_points: pointsToAward },
+      });
+    }
+  }
+
   order.status = status as any;
   await order.save();
   return order;
