@@ -112,6 +112,7 @@ Chỉ trả về JSON, không giải thích thêm.`;
   }
 };
 
+
 export const parseOrderNoteForStaff = async (rawNote?: string): Promise<string[]> => {
   if (!rawNote?.trim()) return [];
 
@@ -161,57 +162,6 @@ Ghi chú khách:
 
     return [rawNote.trim()];
   }
-};
-
-export const parseOrderNoteForStaff = async (rawNote?: string): Promise<string[]> => {
-    if (!rawNote?.trim()) return [];
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const prompt = `
-Bạn là trợ lý xử lý đơn cho cửa hàng đồ ăn.
-
-Nhiệm vụ:
-Phân tích ghi chú của khách và chuyển thành danh sách ngắn gọn để nhân viên bếp đọc nhanh.
-
-MỤC TIÊU OUTPUT:
-- Mỗi ý là một chuỗi ngắn, rõ ràng, hành động được.
-- Ưu tiên cách viết ngắn theo văn phong vận hành bếp.
-- Không giải thích dài dòng.
-- Không thêm thông tin ngoài ghi chú khách.
-
-QUY TẮC CHUẨN HÓA:
-1. Nếu khách nói bị dị ứng với thành phần nào, chuyển thành dạng "không <thành phần>".
-2. Nếu khách nói "không bỏ/lấy X", "bỏ X", "không X", chuyển thành "không X".
-4. Nếu khách nói "thêm X", chuyển thành "thêm X".
-5. Nếu có nhiều ý, tách thành nhiều phần tử trong mảng theo đúng thứ tự xuất hiện trong ghi chú.
-6. Chỉ trả về JSON hợp lệ, duy nhất, không kèm markdown, không kèm giải thích:
-{
-  "items": ["...", "..."]
-}
-Ghi chú khách:
-"${rawNote}"
-`;
-
-    try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('No JSON in AI response');
-
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (!Array.isArray(parsed.items)) throw new Error('Invalid items format');
-
-        return parsed.items
-            .map((item: unknown) => String(item).trim())
-            .filter(Boolean)
-            .slice(0, 10);
-    } catch (error) {
-        console.error('parseOrderNoteForStaff error:', error);
-
-        return [rawNote.trim()];
-    }
 };
 
 export interface AISafeFoodInsight {
@@ -268,58 +218,58 @@ YÊU CẦU:
 
 Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.`;
 
-    try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('No JSON in safe foods AI response');
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in safe foods AI response');
 
-        const parsed = JSON.parse(jsonMatch[0]);
-        return parsed.insights as AISafeFoodInsight[];
-    } catch (err) {
-        console.error('Gemini Safe Foods Insight error:', err);
-        return productsToAnalyze.map((p) => ({
-            productId: p._id.toString(),
-            aiReason: 'Món ăn an toàn, đã được sàng lọc không chứa thành phần gây dị ứng của bạn.',
-        }));
-    }
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed.insights as AISafeFoodInsight[];
+  } catch (err) {
+    console.error('Gemini Safe Foods Insight error:', err);
+    return productsToAnalyze.map((p) => ({
+      productId: p._id.toString(),
+      aiReason: 'Món ăn an toàn, đã được sàng lọc không chứa thành phần gây dị ứng của bạn.',
+    }));
+  }
 };
 
 export const getAIResponseForChat = async (
-    history: { role: 'user' | 'model'; parts: { text: string }[] }[],
-    message: string
+  history: { role: 'user' | 'model'; parts: { text: string }[] }[],
+  message: string
 ): Promise<string> => {
-    // Transform Gemini-style history to Groq-compatible history
-    const messages = history.map((h) => ({
-        role: h.role === 'model' ? 'assistant' : 'user',
-        content: h.parts[0].text,
-    }));
+  // Transform Gemini-style history to Groq-compatible history
+  const messages = history.map((h) => ({
+    role: h.role === 'model' ? 'assistant' : 'user',
+    content: h.parts[0].text,
+  }));
 
-    // Add System prompt
-    const systemPrompt = {
-        role: 'system',
-        content: `Bạn là Chatbot hỗ trợ thông minh của FOA (Food Order App). 
+  // Add System prompt
+  const systemPrompt = {
+    role: 'system',
+    content: `Bạn là Chatbot hỗ trợ thông minh của FOA (Food Order App). 
             FOA là ứng dụng gọi món ăn tập trung vào sức khỏe người dùng, 
             giúp gợi ý món ăn dựa trên hồ sơ sức khỏe, dị ứng và mục tiêu dinh dưỡng.
             Hãy trả lời bằng Tiếng Việt, lịch sự, thân thiện và hữu ích.
             Nếu được hỏi về các món ăn, hãy khuyến khích người dùng cập nhật hồ sơ sức khỏe trong phần cài đặt để có gợi ý chính xác nhất.`,
-    };
+  };
 
-    try {
-        const completion = await groq.chat.completions.create({
-            messages: [systemPrompt, ...messages, { role: 'user', content: message }] as any,
-            model: 'llama-3.3-70b-versatile',
-            temperature: 0.7,
-            max_tokens: 1024,
-        });
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [systemPrompt, ...messages, { role: 'user', content: message }] as any,
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 1024,
+    });
 
-        return completion.choices[0]?.message?.content || 'Xin lỗi, tôi không nhận được phản hồi.';
-    } catch (err: any) {
-        console.error('Groq Chat error:', err);
-        if (err.status === 429) {
-            return 'Hệ thống AI hiện đang bận do quá tải yêu cầu. Vui lòng thử lại sau 1 phút nhé! 🕒';
-        }
-        return 'Xin lỗi, tôi đang gặp lỗi kỹ thuật khi kết nối với Groq. Vui lòng thử lại sau nhé!';
+    return completion.choices[0]?.message?.content || 'Xin lỗi, tôi không nhận được phản hồi.';
+  } catch (err: any) {
+    console.error('Groq Chat error:', err);
+    if (err.status === 429) {
+      return 'Hệ thống AI hiện đang bận do quá tải yêu cầu. Vui lòng thử lại sau 1 phút nhé! 🕒';
     }
+    return 'Xin lỗi, tôi đang gặp lỗi kỹ thuật khi kết nối với Groq. Vui lòng thử lại sau nhé!';
+  }
 };
