@@ -1,5 +1,5 @@
 import { BAD_REQUEST, NOT_FOUND } from '@/constants/http';
-import { CartModel, OrderModel, ProductModel, UserModel } from '@/models';
+import { CartModel, OrderModel, ProductModel, UserModel, SettingsModel } from '@/models';
 import { DiscountType } from '@/types/voucher.type';
 import appAssert from '@/utils/appAssert';
 import withTransaction from '@/utils/withTransaction';
@@ -21,7 +21,12 @@ const INNER_DISTRICTS = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành S
 const OUTER_DISTRICTS = ['Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
 const DELIVERABLE_CITY = 'Đà Nẵng';
 
-export function calculateShippingFee(district: string, city: string, subtotal: number): { fee: number; blocked: boolean; reason?: string } {
+// Default fallback fees (matches frontend DEFAULT_SHIPPING_CONFIG)
+const DEFAULT_BASE_FEE = 15_000;
+const DEFAULT_FEE_PER_KM = 5_000;
+const DEFAULT_FREE_THRESHOLD = 300_000;
+
+export async function calculateShippingFee(district: string, city: string, subtotal: number): Promise<{ fee: number; blocked: boolean; reason?: string }> {
   const normalCity = city.trim();
   const normalDistrict = district.trim();
 
@@ -36,9 +41,27 @@ export function calculateShippingFee(district: string, city: string, subtotal: n
     return { fee: 0, blocked: true, reason: `Khu vực "${normalDistrict}" nằm ngoài vùng giao hàng` };
   }
 
-  if (subtotal >= 300_000) return { fee: 0, blocked: false };
-  if (isInner) return { fee: 15_000, blocked: false };
-  return { fee: 25_000, blocked: false };
+  // Read dynamic settings from DB
+  let baseDeliveryFee = DEFAULT_BASE_FEE;
+  let feePerKm = DEFAULT_FEE_PER_KM;
+  let freeDeliveryEnabled = true;
+  let freeDeliveryThreshold = DEFAULT_FREE_THRESHOLD;
+
+  try {
+    const settings = await SettingsModel.findOne().lean();
+    if (settings) {
+      baseDeliveryFee = parseFloat(settings.baseDeliveryFee as string) || DEFAULT_BASE_FEE;
+      feePerKm = parseFloat(settings.feePerKm as string) || DEFAULT_FEE_PER_KM;
+      freeDeliveryEnabled = settings.freeDeliveryEnabled ?? true;
+      freeDeliveryThreshold = parseFloat(settings.freeDeliveryThreshold as string) || DEFAULT_FREE_THRESHOLD;
+    }
+  } catch (_) {
+    // On DB error, use defaults
+  }
+
+  if (freeDeliveryEnabled && subtotal >= freeDeliveryThreshold) return { fee: 0, blocked: false };
+  if (isInner) return { fee: baseDeliveryFee, blocked: false };
+  return { fee: baseDeliveryFee + feePerKm * 5, blocked: false };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -182,7 +205,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
     // Validate shipping fee is correct for the destination
-    const shippingResult = calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
+    const shippingResult = await calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
     appAssert(
       !shippingResult.blocked,
       BAD_REQUEST,
