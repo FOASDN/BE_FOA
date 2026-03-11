@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from '@/constants/env';
-import { CONFLICT, INTERNAL_SERVER_ERROR } from '@/constants/http';
+import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND } from '@/constants/http';
 import { UserModel } from '@/models';
 import VerificationCodeModel from '@/models/verificationCode.model';
 import { Role } from '@/types/user.type';
@@ -15,7 +15,7 @@ import { generateUsernameFromEmail } from '@/utils/generateUsername';
 import { getStaffInviteTemplate } from '@/utils/emailTemplates';
 import mongoose from 'mongoose';
 
-export const createStaffByAdmin = async (adminId: mongoose.Types.ObjectId | string, { email, phone }: { email: string; phone?: string }) => {
+export const createStaffByAdmin = async (adminId: mongoose.Types.ObjectId | string, { name, email, phone }: { name: string; email: string; phone?: string }) => {
   return withTransaction(async (session) => {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -25,6 +25,7 @@ export const createStaffByAdmin = async (adminId: mongoose.Types.ObjectId | stri
     const username = await generateUsernameFromEmail(normalizedEmail, session);
 
     const staff = new UserModel({
+      fullName: name,
       username,
       email: normalizedEmail,
       phone,
@@ -35,16 +36,19 @@ export const createStaffByAdmin = async (adminId: mongoose.Types.ObjectId | stri
 
     await staff.save({ session });
 
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
     const verificationCode = new VerificationCodeModel({
       user_id: staff._id,
       type: VerificationCodeType.STAFF_INVITE,
       email: staff.email,
+      code,
       expires_at: oneHourFromNow(),
     });
 
     await verificationCode.save({ session });
 
-    const url = `${APP_ORIGIN}/password/reset?code=${verificationCode._id}&exp=${verificationCode.expires_at.getTime()}`;
+    const url = `${APP_ORIGIN}/reset-password?code=${code}&email=${staff.email}&type=invite`;
 
     const { error } = await sendMail({
       to: staff.email,
@@ -67,6 +71,46 @@ export const createStaffByAdmin = async (adminId: mongoose.Types.ObjectId | stri
             email: staff.email,
             phone: staff.phone,
             role: staff.role,
+            isActive: staff.isActive,
+          },
+          created_at: new Date(),
+        },
+      ],
+      { session }
+    );
+
+    return staff.omitPassword();
+  });
+};
+
+export const updateStaffStatus = async (
+  adminId: mongoose.Types.ObjectId | string,
+  staffId: string,
+  isActive: boolean
+) => {
+  return withTransaction(async (session) => {
+    const staff = await UserModel.findOne({ _id: staffId, role: Role.STAFF }).session(session);
+    appAssert(staff, NOT_FOUND, 'Không tìm thấy nhân viên');
+
+    const oldData = {
+      id: staff._id,
+      isActive: staff.isActive,
+    };
+
+    staff.isActive = isActive;
+    await staff.save({ session });
+
+    const actorId = typeof adminId === 'string' ? new mongoose.Types.ObjectId(adminId) : adminId;
+
+    await AuditLogModel.create(
+      [
+        {
+          user_id: actorId,
+          entity_type: AuditEntityType.USER,
+          action: AuditLogAction.UPDATE,
+          old_data: oldData,
+          new_data: {
+            id: staff._id,
             isActive: staff.isActive,
           },
           created_at: new Date(),

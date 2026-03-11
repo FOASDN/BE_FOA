@@ -42,6 +42,7 @@ const PreferencesSchema = new mongoose.Schema(
 
 const UserSchema = new mongoose.Schema<IUser>(
   {
+    fullName: { type: String, trim: true },
     username: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, match: EMAIL_REGEX },
     phone: {
