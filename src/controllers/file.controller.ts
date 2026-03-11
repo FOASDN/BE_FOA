@@ -17,11 +17,20 @@ export const uploadFileHandler = catchErrors(async (req: Request, res: Response)
 
   const ownerType = (req.query.ownerType as FileOwnerType) ?? FileOwnerType.PRODUCT;
 
+  let folder = 'food_order_app/products';
+  let prefix = 'product';
+
+  if (ownerType === FileOwnerType.REVIEW) {
+    folder = 'food_order_app/reviews';
+    prefix = 'review';
+  }
+
   const fileDoc = await uploadAndSaveFile({
     file: req.file,
     ownerType,
-    folder: 'food_order_app/products',
-    prefix: 'product',
+    ownerId: (req as any).userId,
+    folder,
+    prefix,
   });
 
   return res.success(CREATED, {

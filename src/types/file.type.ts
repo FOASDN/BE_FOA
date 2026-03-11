@@ -10,6 +10,7 @@ export enum FileOwnerType {
   USER = 'user',
   PRODUCT = 'product',
   CATEGORY = 'category',
+  REVIEW = 'review',
 }
 
 export default interface IFile extends mongoose.Document {
