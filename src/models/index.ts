@@ -9,3 +9,4 @@ export { default as OrderModel } from './order.model';
 export { default as ReviewModel } from './review.model';
 export { default as NotificationModel } from './notification.model';
 export { default as AuditLogModel } from './audit-log.model';
+export { default as SettingsModel } from './settings.model';
