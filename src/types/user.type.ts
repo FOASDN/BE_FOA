@@ -23,6 +23,7 @@ export interface IPreferences {
 }
 
 export default interface IUser extends mongoose.Document<mongoose.Types.ObjectId> {
+  fullName?: string;
   username: string;
   email: string;
   phone: string;

@@ -269,15 +269,23 @@ export const resetPassword = async ({ email, code, password }: TResetPasswordPar
   const validCode = await VerificationCodeModel.findOne({
     email,
     code,
-    type: VerificationCodeType.FORGOT_PASSWORD,
+    type: { $in: [VerificationCodeType.FORGOT_PASSWORD, VerificationCodeType.STAFF_INVITE] },
     expires_at: { $gt: new Date() },
   });
   appAssert(validCode, NOT_FOUND, 'Mã xác thực không hợp lệ hoặc đã hết hạn');
 
-  //update user password
-  const updatedUser = await UserModel.findByIdAndUpdate(validCode.user_id, {
+  // If this is a staff invite, we also activate the account
+  const updateData: any = {
     password_hash: await hashValue(password),
-  });
+  };
+
+  if (validCode.type === VerificationCodeType.STAFF_INVITE) {
+    updateData.isActive = true;
+    updateData.verified_at = new Date();
+  }
+
+  //update user password
+  const updatedUser = await UserModel.findByIdAndUpdate(validCode.user_id, updateData, { new: true });
   appAssert(updatedUser, INTERNAL_SERVER_ERROR, 'Lỗi khi đặt lại mật khẩu');
 
   //delete verification code record
