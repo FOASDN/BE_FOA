@@ -4,10 +4,10 @@ import { uploadBuffer, deleteFile } from '@/utils/uploadFile';
 import { NOT_FOUND, BAD_REQUEST } from '@/constants/http';
 import appAssert from '@/utils/appAssert';
 import mongoose from 'mongoose';
-
 interface UploadFileParams {
   file: Express.Multer.File;
   ownerType: FileOwnerType;
+  ownerId?: string | mongoose.Types.ObjectId;
   folder?: string;
   prefix?: string;
 }
@@ -19,6 +19,7 @@ interface UploadFileParams {
 export const uploadAndSaveFile = async ({
   file,
   ownerType,
+  ownerId,
   folder = 'products',
   prefix = 'product',
 }: UploadFileParams) => {
@@ -37,11 +38,6 @@ export const uploadAndSaveFile = async ({
     folder: string;
   };
 
-  // Tạo một owner_id tạm thời (ObjectId placeholder).
-  // Sau khi product được tạo, có thể update lại owner_id nếu cần.
-  // Đây là trade-off chấp nhận được cho flow upload-trước-tạo-entity.
-  const placeholderOwnerId = new mongoose.Types.ObjectId();
-
   // Lưu metadata vào MongoDB File collection
   const fileDoc = await FileModel.create({
     public_id: cloudinaryResult.public_id,
@@ -52,7 +48,7 @@ export const uploadAndSaveFile = async ({
     bytes: cloudinaryResult.bytes ?? 0,
     format: cloudinaryResult.format ?? '',
     folder: cloudinaryResult.folder ?? folder,
-    owner_id: placeholderOwnerId,
+    owner_id: ownerId ? new mongoose.Types.ObjectId(ownerId) : new mongoose.Types.ObjectId(),
     owner_type: ownerType,
   });
 

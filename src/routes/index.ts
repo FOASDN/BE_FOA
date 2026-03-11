@@ -11,6 +11,7 @@ import cartRouter from './cart.route';
 import chatRoutes from './chat.route';
 import paymentRoutes from './payment.route';
 import notificationRoutes from './notification.route';
+import reviewRoutes from './review.route';
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
@@ -29,6 +30,7 @@ appRoutes.use('/products', productRoute);
 appRoutes.use('/location', locationRoutes);
 appRoutes.use('/orders', orderRoutes);
 appRoutes.use('/notifications', notificationRoutes);
+appRoutes.use('/reviews', reviewRoutes);
 
 // File upload / management — bảo vệ bằng auth trong file.route.ts
 appRoutes.use('/files', fileRoutes);

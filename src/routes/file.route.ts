@@ -15,7 +15,7 @@ const fileRoutes = Router();
 fileRoutes.post(
   '/upload',
   authenticate,
-  authorize(Role.ADMIN, Role.STAFF),
+  authorize(Role.ADMIN, Role.STAFF, Role.CUSTOMER),
   uploadImage.single('file'),
   uploadFileHandler
 );
