@@ -10,6 +10,7 @@ import { PaymentMethod, OrderStatus } from '@/types/order.type';
 import { createPaymentLink } from './payos.service';
 import { APP_ORIGIN } from '@/constants/env';
 import { parseOrderNoteForStaff } from './ai.service';
+import { createOrderStatusNotification } from './notification.service';
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -21,7 +22,11 @@ const INNER_DISTRICTS = ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành S
 const OUTER_DISTRICTS = ['Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'];
 const DELIVERABLE_CITY = 'Đà Nẵng';
 
-export function calculateShippingFee(district: string, city: string, subtotal: number): { fee: number; blocked: boolean; reason?: string } {
+export function calculateShippingFee(
+  district: string,
+  city: string,
+  subtotal: number
+): { fee: number; blocked: boolean; reason?: string } {
   const normalCity = city.trim();
   const normalDistrict = district.trim();
 
@@ -183,11 +188,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
 
     // Validate shipping fee is correct for the destination
     const shippingResult = calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
-    appAssert(
-      !shippingResult.blocked,
-      BAD_REQUEST,
-      shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng'
-    );
+    appAssert(!shippingResult.blocked, BAD_REQUEST, shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng');
     appAssert(
       shippingResult.fee === shipping_fee,
       BAD_REQUEST,
@@ -346,6 +347,13 @@ export const updateOrderStatus = async (idOrCode: string, status: string) => {
 
   order.status = status as any;
   await order.save();
+
+  await createOrderStatusNotification({
+    user_id: order.user_id._id ? order.user_id._id : order.user_id,
+    orderCode: order.code,
+    status,
+  });
+
   return order;
 };
 
@@ -360,6 +368,12 @@ export const confirmPayment = async (orderCode: number) => {
     order.status = OrderStatus.CONFIRMED;
     order.payment.paid_at = new Date();
     await order.save();
+
+    await createOrderStatusNotification({
+      user_id: order.user_id,
+      orderCode: order.code,
+      status: OrderStatus.CONFIRMED,
+    });
   }
 
   return order;
