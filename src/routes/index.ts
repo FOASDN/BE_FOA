@@ -10,6 +10,7 @@ import userRoutes from './user.route';
 import cartRouter from './cart.route';
 import chatRoutes from './chat.route';
 import paymentRoutes from './payment.route';
+import notificationRoutes from './notification.route';
 import { uploadImage } from '@/config/multer';
 import { uploadBuffer } from '@/utils/uploadFile';
 import { parseFormData } from '@/utils/parseFormData';
@@ -18,7 +19,7 @@ import settingsRoute from './settings.route';
 const appRoutes = Router();
 
 appRoutes.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+  res.json({ status: 'ok' });
 });
 
 appRoutes.use('/auth', authRoutes);
@@ -27,6 +28,7 @@ appRoutes.use('/vouchers', voucherRoutes);
 appRoutes.use('/products', productRoute);
 appRoutes.use('/location', locationRoutes);
 appRoutes.use('/orders', orderRoutes);
+appRoutes.use('/notifications', notificationRoutes);
 
 // File upload / management — bảo vệ bằng auth trong file.route.ts
 appRoutes.use('/files', fileRoutes);

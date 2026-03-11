@@ -10,6 +10,7 @@ import { PaymentMethod, OrderStatus } from '@/types/order.type';
 import { createPaymentLink } from './payos.service';
 import { APP_ORIGIN } from '@/constants/env';
 import { parseOrderNoteForStaff } from './ai.service';
+import { createOrderStatusNotification } from './notification.service';
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -369,6 +370,13 @@ export const updateOrderStatus = async (idOrCode: string, status: string) => {
 
   order.status = status as any;
   await order.save();
+
+  await createOrderStatusNotification({
+    user_id: order.user_id._id ? order.user_id._id : order.user_id,
+    orderCode: order.code,
+    status,
+  });
+
   return order;
 };
 
@@ -383,6 +391,12 @@ export const confirmPayment = async (orderCode: number) => {
     order.status = OrderStatus.CONFIRMED;
     order.payment.paid_at = new Date();
     await order.save();
+
+    await createOrderStatusNotification({
+      user_id: order.user_id,
+      orderCode: order.code,
+      status: OrderStatus.CONFIRMED,
+    });
   }
 
   return order;
