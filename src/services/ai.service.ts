@@ -3,6 +3,7 @@ import Groq from 'groq-sdk';
 import { GEMINI_API_KEY, GROQ_API_KEY } from '@/constants/env';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 interface ProductForAI {
@@ -104,42 +105,52 @@ Chỉ trả về JSON, không giải thích thêm.`;
 
 
 
+
 export const parseOrderNoteForStaff = async (rawNote?: string): Promise<string[]> => {
   if (!rawNote?.trim()) return [];
 
   const prompt = `
-Bạn là trợ lý xử lý đơn cho cửa hàng đồ ăn. Phân tích ghi chú của khách và chuyển thành danh sách ngắn gọn cho nhân viên bếp.
-Chỉ trả về JSON mảng "items".
+Bạn là trợ lý xử lý đơn cho cửa hàng đồ ăn.
 
-QUY TẮC:
-1. Dễ đọc cho bếp.
-2. Dị ứng -> "không X".
-3. Chỉ trả về JSON, không kèm text khác.
+Nhiệm vụ:
+Phân tích ghi chú của khách và chuyển thành danh sách ngắn gọn để nhân viên bếp đọc nhanh.
 
+MỤC TIÊU OUTPUT:
+- Mỗi ý là một chuỗi ngắn, rõ ràng, hành động được.
+- Ưu tiên cách viết ngắn theo văn phong vận hành bếp.
+- Không giải thích dài dòng.
+- Không thêm thông tin ngoài ghi chú khách.
+
+QUY TẮC CHUẨN HÓA:
+1. Nếu khách nói bị dị ứng với thành phần nào, chuyển thành dạng "không <thành phần>".
+2. Nếu khách nói "không bỏ/lấy X", "bỏ X", "không X", chuyển thành "không X".
+4. Nếu khách nói "thêm X", chuyển thành "thêm X".
+5. Nếu có nhiều ý, tách thành nhiều phần tử trong mảng theo đúng thứ tự xuất hiện trong ghi chú.
+6. Chỉ trả về JSON hợp lệ, duy nhất, không kèm markdown, không kèm giải thích:
 {
   "items": ["...", "..."]
 }
-
 Ghi chú khách:
 "${rawNote}"
 `;
 
   try {
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama3-8b-8192',
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
-    });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    const text = completion.choices[0]?.message?.content || '{}';
-    const parsed = JSON.parse(text);
-    return (parsed.items || [])
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in AI response');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed.items)) throw new Error('Invalid items format');
+
+    return parsed.items
       .map((item: unknown) => String(item).trim())
       .filter(Boolean)
       .slice(0, 10);
   } catch (error) {
-    console.error('parseOrderNoteForStaff Groq error:', error);
+    console.error('parseOrderNoteForStaff error:', error);
+
     return [rawNote.trim()];
   }
 };
@@ -178,21 +189,20 @@ YÊU CẦU:
 {
   "insights": [{"productId": "...", "aiReason": "..."}]
 }
-Chỉ trả về JSON.`;
+
+Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.`;
 
   try {
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama3-70b-8192',
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    const text = completion.choices[0]?.message?.content || '{}';
-    const parsed = JSON.parse(text);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in safe foods AI response');
+
+    const parsed = JSON.parse(jsonMatch[0]);
     return parsed.insights as AISafeFoodInsight[];
   } catch (err) {
-    console.error('getAISafeFoodInsights Groq error:', err);
+    console.error('Gemini Safe Foods Insight error:', err);
     return productsToAnalyze.map((p) => ({
       productId: p._id.toString(),
       aiReason: 'Món ăn an toàn, đã được sàng lọc không chứa thành phần gây dị ứng của bạn.',
@@ -202,7 +212,12 @@ Chỉ trả về JSON.`;
 
 export const getAIResponseForChat = async (
   history: { role: 'user' | 'model'; parts: { text: string }[] }[],
-  message: string
+  message: string,
+  userContext?: {
+    fullName: string;
+    preferences: Preferences;
+    safeProducts: { name: string; description: string }[]
+  } | null
 ): Promise<string> => {
   // Transform Gemini-style history to Groq-compatible history
   const messages = history.map((h) => ({
@@ -210,14 +225,37 @@ export const getAIResponseForChat = async (
     content: h.parts[0].text,
   }));
 
+  // Personalize System prompt if userContext is provided
+  let contextSnippet = '';
+  if (userContext) {
+    const { fullName, preferences, safeProducts } = userContext;
+    contextSnippet = `
+            THÔNG TIN NGƯỜI DÙNG HIỆN TẠI:
+            - Tên: ${fullName}
+            - Dị ứng: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'Không có'}
+            - Chế độ ăn kiêng: ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'Không có'}
+            - Mục tiêu sức khỏe: ${preferences.health_goals.length > 0 ? preferences.health_goals.join(', ') : 'Không có'}
+            
+            DANH SÁCH MÓN ĂN AN TOÀN GỢI Ý (Bạn hãy ưu tiên nhắc đến những món này):
+            ${safeProducts.map(p => `- ${p.name}: ${p.description}`).join('\n')}
+            
+            HƯỚNG DẪN: hãy chào ${fullName} một cách thân thiện. Sử dụng thông tin sức khỏe trên để tư vấn món ăn. 
+            Nếu người dùng hỏi về món ăn không nằm trong danh sách an toàn, hãy nhắc nhở họ kiểm tra kỹ thành phần.`;
+  }
+
   // Add System prompt
   const systemPrompt = {
     role: 'system',
     content: `Bạn là Chatbot hỗ trợ thông minh của FOA (Food Order App). 
             FOA là ứng dụng gọi món ăn tập trung vào sức khỏe người dùng, 
             giúp gợi ý món ăn dựa trên hồ sơ sức khỏe, dị ứng và mục tiêu dinh dưỡng.
-            Hãy trả lời bằng Tiếng Việt, lịch sự, thân thiện và hữu ích.
-            Nếu được hỏi về các món ăn, hãy khuyến khích người dùng cập nhật hồ sơ sức khỏe trong phần cài đặt để có gợi ý chính xác nhất.`,
+            
+            QUY TẮC CỐT LÕI:
+            1. Bạn PHẢI nhận diện và chào người dùng bằng tên nếu được cung cấp ở phần THÔNG TIN NGƯỜI DÙNG bên dưới.
+            2. Bạn đã nắm rõ Dị ứng, Chế độ ăn và Mục tiêu của họ. Tuyệt đối không nói "Tôi không biết bạn là ai" nếu có thông tin bên dưới.
+            3. Trả lời bằng Tiếng Việt, lịch sự, thân thiện và hữu ích.${contextSnippet}
+            
+            Nếu được hỏi về các món ăn ngoài danh sách gợi ý an toàn, hãy nhắc nhở người dùng kiểm tra kỹ thành phần và khuyến khích họ cập nhật hồ sơ sức khỏe trong phần cài đặt.`,
   };
 
   try {

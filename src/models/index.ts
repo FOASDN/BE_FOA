@@ -12,7 +12,7 @@ import AuditLogModel from './audit-log.model';
 import PointTransactionModel from './point-transaction.model';
 import { SupportConversationModel, SupportMessageModel } from './support-chat.model';
 import { SupportSettingsModel } from './support-settings.model';
-
+import SettingsModel from './settings.model';
 export {
   UserModel,
   RefreshTokenModel,
@@ -29,4 +29,5 @@ export {
   SupportConversationModel,
   SupportMessageModel,
   SupportSettingsModel,
+  SettingsModel,
 };

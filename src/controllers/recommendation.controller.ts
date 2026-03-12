@@ -178,7 +178,7 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     // 9. Save to Cache
     const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
     const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
-    
+
     await UserModel.updateOne({ _id: userId }, {
         $set: {
             'aiRecommendationsCache': {
@@ -244,17 +244,17 @@ export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Respons
 
     if (userAllergies.length > 0) {
         safeProducts = allProducts.filter(product => {
-            const ingredients = (product.recipe || []).map((r: any) => 
+            const ingredients = (product.recipe || []).map((r: any) =>
                 r.name.normalize('NFC').toLowerCase().trim()
             );
-            
+
             const hasAllergen = ingredients.some((ingredient: string) =>
                 userAllergies.some((allergy: string) => {
                     const cleanAllergy = allergy.normalize('NFC').toLowerCase().trim();
                     return ingredient.includes(cleanAllergy) || cleanAllergy.includes(ingredient);
                 })
             );
-            
+
             if (hasAllergen) unsafeCount++;
             return !hasAllergen;
         });
@@ -318,7 +318,7 @@ export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Respons
     // 7. Save to Cache
     const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
     const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
-    
+
     await UserModel.updateOne({ _id: userId }, {
         $set: {
             'aiRecommendationsCache': {

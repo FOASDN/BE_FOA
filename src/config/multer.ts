@@ -4,7 +4,7 @@ import multer from 'multer';
 
 export const uploadImage = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new AppError('Chỉ cho phép upload ảnh', 400, AppErrorCode.InvalidFileType));

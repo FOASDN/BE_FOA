@@ -8,6 +8,9 @@ import {
   placeOrderHandler,
   rejectOrderHandler,
   updateOrderStatusHandler,
+  getWeeklyRevenueHandler,
+  getDashboardStatsHandler,
+  getRecentOrdersHandler,
   assignDeliveryHandler,
   completeDeliveryHandler,
 } from '@/controllers/order.controller';
@@ -34,6 +37,10 @@ orderRoutes.patch('/:id/status', authenticate, authorize(Role.ADMIN, Role.STAFF)
 
 // PATCH /api/orders/:id/cancel — Cancel an order
 orderRoutes.patch('/:id/cancel', authenticate, cancelOrderHandler);
+//get /api/orders/revenue/weekly
+orderRoutes.get('/orders/revenue/weekly', getWeeklyRevenueHandler);
+orderRoutes.get('/orders/dashboard/stats', getDashboardStatsHandler);
+orderRoutes.get('/orders/recent', getRecentOrdersHandler);
 
 // ── Staff-only actions ────────────────────────────────────────────────────
 // PATCH /api/orders/:id/confirm — Staff nhận đơn (PENDING → CONFIRMED)

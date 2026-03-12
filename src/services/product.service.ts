@@ -51,6 +51,9 @@ export const getAllProducts = async (filters: ProductFilters) => {
 
   if (search) {
     query.$text = { $search: search };
+
+
+
   }
 
   let sortOptions: any = {};
@@ -82,6 +85,7 @@ export const getAllProducts = async (filters: ProductFilters) => {
   return {
     products,
     pagination: {
+
       page,
       limit,
       total,
@@ -98,6 +102,7 @@ export const getProductById = async (id: string) => {
 
 export const createProduct = async (data: Partial<IProduct>) => {
   const product = await ProductModel.create(data);
+
   return product;
 };
 

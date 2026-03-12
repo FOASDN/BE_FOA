@@ -32,7 +32,6 @@ const DeliveryAddressSchema = new mongoose.Schema<IDeliveryAddress>(
     receiver_name: { type: String },
     phone: { type: String },
     detail: { type: String },
-    ward: { type: String },
     district: { type: String },
     city: { type: String },
   },

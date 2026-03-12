@@ -23,7 +23,6 @@ const AddressSchema = new mongoose.Schema<IAddresses>(
       },
     },
     detail: { type: String, required: true, trim: true },
-    ward: { type: String, required: true, trim: true },
     district: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     isDefault: { type: Boolean, default: false },
@@ -44,6 +43,7 @@ const PreferencesSchema = new mongoose.Schema(
 
 const UserSchema = new mongoose.Schema<IUser>(
   {
+    fullName: { type: String, trim: true },
     username: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, match: EMAIL_REGEX },
     phone: {

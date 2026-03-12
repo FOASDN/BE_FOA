@@ -4,7 +4,7 @@ import {
   deleteProductHandler,
   getAllProductsHandler,
   getProductByIdHandler,
-  updateProductHandler,
+  updateProductHandler
 } from '@/controllers/product.controller';
 import { getRecommendationsHandler, getSafeFoodsHandler } from '@/controllers/recommendation.controller';
 import authenticate from '@/middlewares/authenticate';
@@ -19,7 +19,6 @@ router.get('/', getAllProductsHandler);
 // AI-powered routes (authenticated)
 router.get('/recommendations', authenticate, getRecommendationsHandler);
 router.get('/safe-foods', authenticate, getSafeFoodsHandler);
-
 router.get('/:id', getProductByIdHandler);
 
 // Admin routes

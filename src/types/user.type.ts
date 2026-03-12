@@ -19,7 +19,6 @@ export interface IAddresses {
   receiver_name: string;
   phone: string;
   detail: string;
-  ward: string;
   district: string;
   city: string;
   isDefault: boolean;
@@ -38,6 +37,7 @@ export interface IHealthProfile {
 }
 
 export default interface IUser extends mongoose.Document<mongoose.Types.ObjectId> {
+  fullName?: string;
   username: string;
   email: string;
   phone: string;
