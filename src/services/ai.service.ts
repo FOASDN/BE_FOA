@@ -238,7 +238,12 @@ Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.
 
 export const getAIResponseForChat = async (
   history: { role: 'user' | 'model'; parts: { text: string }[] }[],
-  message: string
+  message: string,
+  userContext?: { 
+    fullName: string; 
+    preferences: Preferences; 
+    safeProducts: { name: string; description: string }[] 
+  } | null
 ): Promise<string> => {
   // Transform Gemini-style history to Groq-compatible history
   const messages = history.map((h) => ({
@@ -246,14 +251,37 @@ export const getAIResponseForChat = async (
     content: h.parts[0].text,
   }));
 
+  // Personalize System prompt if userContext is provided
+  let contextSnippet = '';
+  if (userContext) {
+    const { fullName, preferences, safeProducts } = userContext;
+    contextSnippet = `
+            THÔNG TIN NGƯỜI DÙNG HIỆN TẠI:
+            - Tên: ${fullName}
+            - Dị ứng: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'Không có'}
+            - Chế độ ăn kiêng: ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'Không có'}
+            - Mục tiêu sức khỏe: ${preferences.health_goals.length > 0 ? preferences.health_goals.join(', ') : 'Không có'}
+            
+            DANH SÁCH MÓN ĂN AN TOÀN GỢI Ý (Bạn hãy ưu tiên nhắc đến những món này):
+            ${safeProducts.map(p => `- ${p.name}: ${p.description}`).join('\n')}
+            
+            HƯỚNG DẪN: hãy chào ${fullName} một cách thân thiện. Sử dụng thông tin sức khỏe trên để tư vấn món ăn. 
+            Nếu người dùng hỏi về món ăn không nằm trong danh sách an toàn, hãy nhắc nhở họ kiểm tra kỹ thành phần.`;
+  }
+
   // Add System prompt
   const systemPrompt = {
     role: 'system',
     content: `Bạn là Chatbot hỗ trợ thông minh của FOA (Food Order App). 
             FOA là ứng dụng gọi món ăn tập trung vào sức khỏe người dùng, 
             giúp gợi ý món ăn dựa trên hồ sơ sức khỏe, dị ứng và mục tiêu dinh dưỡng.
-            Hãy trả lời bằng Tiếng Việt, lịch sự, thân thiện và hữu ích.
-            Nếu được hỏi về các món ăn, hãy khuyến khích người dùng cập nhật hồ sơ sức khỏe trong phần cài đặt để có gợi ý chính xác nhất.`,
+            
+            QUY TẮC CỐT LÕI:
+            1. Bạn PHẢI nhận diện và chào người dùng bằng tên nếu được cung cấp ở phần THÔNG TIN NGƯỜI DÙNG bên dưới.
+            2. Bạn đã nắm rõ Dị ứng, Chế độ ăn và Mục tiêu của họ. Tuyệt đối không nói "Tôi không biết bạn là ai" nếu có thông tin bên dưới.
+            3. Trả lời bằng Tiếng Việt, lịch sự, thân thiện và hữu ích.${contextSnippet}
+            
+            Nếu được hỏi về các món ăn ngoài danh sách gợi ý an toàn, hãy nhắc nhở người dùng kiểm tra kỹ thành phần và khuyến khích họ cập nhật hồ sơ sức khỏe trong phần cài đặt.`,
   };
 
   try {
