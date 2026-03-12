@@ -7,6 +7,7 @@ import {
   getAllProducts,
   getProductById,
   updateProduct,
+  getUniqueIngredients,
 } from '@/services/product.service';
 import { productValidator, updateProductValidator } from '@/validators/product.validator';
 
@@ -60,4 +61,9 @@ export const deleteProductHandler = catchErrors(async (req: Request, res: Respon
   const { id } = req.params;
   await deleteProduct(id);
   return res.success(OK, { message: 'Product deleted successfully' });
+});
+
+export const getUniqueIngredientsHandler = catchErrors(async (req: Request, res: Response) => {
+  const ingredients = await getUniqueIngredients();
+  return res.success(OK, { data: ingredients });
 });
