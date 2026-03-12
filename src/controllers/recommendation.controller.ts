@@ -49,7 +49,7 @@ async function getSimilarUsersTopProducts(
     const similarUserIds = similarUsers.map(u => u._id);
     const orders = await OrderModel.find({
         user_id: { $in: similarUserIds },
-        status: OrderStatus.completed,
+        status: OrderStatus.COMPLETED,
     }).lean();
 
     if (orders.length === 0) {

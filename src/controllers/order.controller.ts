@@ -8,10 +8,16 @@ import {
   getWeeklyRevenue,
   getDashboardStats,
   getRecentOrders,
+  confirmOrder,
+  rejectOrder,
+  markOrderReady,
+  assignDelivery,
+  completeDelivery,
 } from '@/services/order.service';
 import { OrderStatus } from '@/types/order.type';
 import { catchErrors } from '@/utils/asyncHandler';
 import { placeOrderValidator } from '@/validators/order.validator';
+import z from 'zod';
 
 /**
  * POST /api/order
@@ -101,4 +107,45 @@ export const getDashboardStatsHandler = catchErrors(async (_req, res) => {
 export const getRecentOrdersHandler = catchErrors(async (_req, res) => {
   const orders = await getRecentOrders();
   return res.success(OK, { data: orders });
+});
+
+/**
+ * PATCH /api/orders/:id/confirm  — Staff nhận đơn (PENDING → CONFIRMED)
+ */
+export const confirmOrderHandler = catchErrors(async (req, res) => {
+  const order = await confirmOrder(req.params.id, req.userId);
+  return res.success(OK, { data: order, message: 'Đã xác nhận đơn hàng, bắt đầu chế biến' });
+});
+
+/**
+ * PATCH /api/orders/:id/reject  — Staff từ chối đơn (PENDING → CANCELLED)
+ */
+export const rejectOrderHandler = catchErrors(async (req, res) => {
+  const { reason } = z.object({ reason: z.string().min(1, 'Vui lòng cung cấp lý do từ chối') }).parse(req.body);
+  const order = await rejectOrder(req.params.id, req.userId, reason);
+  return res.success(OK, { data: order, message: 'Đã từ chối đơn hàng' });
+});
+
+/**
+ * PATCH /api/orders/:id/ready   — Staff đánh dấu đã xong (CONFIRMED/PROCESSING → READY_FOR_DELIVERY)
+ */
+export const markReadyHandler = catchErrors(async (req, res) => {
+  const order = await markOrderReady(req.params.id, req.userId);
+  return res.success(OK, { data: order, message: 'Đơn hàng đã sẵn sàng để giao' });
+});
+
+/**
+ * PATCH /api/orders/:id/deliver — Staff đi giao (READY_FOR_DELIVERY → SHIPPING)
+ */
+export const assignDeliveryHandler = catchErrors(async (req, res) => {
+  const order = await assignDelivery(req.params.id, req.userId);
+  return res.success(OK, { data: order, message: 'Đã nhận giao đơn hàng này' });
+});
+
+/**
+ * PATCH /api/orders/:id/complete — Staff giao xong (SHIPPING → COMPLETED)
+ */
+export const completeDeliveryHandler = catchErrors(async (req, res) => {
+  const order = await completeDelivery(req.params.id, req.userId);
+  return res.success(OK, { data: order, message: 'Đã giao đơn hàng thành công' });
 });

@@ -3,6 +3,7 @@ import Groq from 'groq-sdk';
 import { GEMINI_API_KEY, GROQ_API_KEY } from '@/constants/env';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 interface ProductForAI {
@@ -33,13 +34,6 @@ export const getAIRecommendations = async (
   preferences: Preferences,
   similarUsersTopProducts?: string[] // Collaborative filtering context
 ): Promise<AIRecommendation[]> => {
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      temperature: 0.9, // Tăng sự đa dạng cho kết quả
-    },
-  });
-
   const productList = products.map((p) => ({
     id: p._id.toString(),
     name: p.name,
@@ -51,7 +45,6 @@ export const getAIRecommendations = async (
     rating: p.rating,
   }));
 
-  // Build collaborative filtering section for prompt
   const collaborativeSection =
     similarUsersTopProducts && similarUsersTopProducts.length > 0
       ? `\nHÀNH VI CỦA NGƯỜI DÙNG TƯƠNG TỰ (Collaborative Filtering):
@@ -74,8 +67,7 @@ ${JSON.stringify(productList, null, 2)}
 YÊU CẦU:
 1. TUYỆT ĐỐI KHÔNG gợi ý món chứa nguyên liệu người dùng bị dị ứng
 2. Ưu tiên món phù hợp với mục tiêu ăn uống và bệnh lý
-3. Nếu có dữ liệu hành vi người dùng tương tự, hãy ưu tiên những món đó NẾU phù hợp sức khỏe
-4. Trả về JSON với đúng format sau, KHÔNG có text thêm:
+3. Trả về JSON duy nhất với format:
 {
   "recommendations": [
     {
@@ -85,22 +77,21 @@ YÊU CẦU:
     }
   ]
 }
-
 Chỉ trả về JSON, không giải thích thêm.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama3-70b-8192', // Groq model
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+    });
 
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON in AI response');
-
-    const parsed = JSON.parse(jsonMatch[0]);
+    const text = completion.choices[0]?.message?.content || '{}';
+    const parsed = JSON.parse(text);
     return parsed.recommendations as AIRecommendation[];
   } catch (err) {
-    console.error('Gemini AI error:', err);
-    // Fallback: return top products by rating
+    console.error('Groq Recommendations error:', err);
     return products
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 6)
@@ -113,10 +104,10 @@ Chỉ trả về JSON, không giải thích thêm.`;
 };
 
 
+
+
 export const parseOrderNoteForStaff = async (rawNote?: string): Promise<string[]> => {
   if (!rawNote?.trim()) return [];
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `
 Bạn là trợ lý xử lý đơn cho cửa hàng đồ ăn.
@@ -173,16 +164,8 @@ export const getAISafeFoodInsights = async (
   safeProducts: ProductForAI[],
   preferences: Preferences
 ): Promise<AISafeFoodInsight[]> => {
-  // If the list is too massive, we might want to slice it, but usually safe products are a reasonable subset.
-  // To save tokens/time, limit to top 20 safe products for AI explanation.
   const productsToAnalyze = safeProducts.slice(0, 20);
-
   if (productsToAnalyze.length === 0) return [];
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: { temperature: 0.4 },
-  });
 
   const productList = productsToAnalyze.map((p) => ({
     id: p._id.toString(),
@@ -191,29 +174,20 @@ export const getAISafeFoodInsights = async (
     ingredients: p.recipe.map((r) => r.name),
   }));
 
-  const prompt = `Bạn là chuyên gia dinh dưỡng. Trách nhiệm của bạn là giải thích TẠI SAO các món ăn trong danh sách dưới đây lại an toàn và phù hợp với người dùng.
-TẤT CẢ các món ăn dưới đây đã được hệ thống kiểm tra và xác nhận 100% KHÔNG chứa chất gây dị ứng của người dùng.
+  const prompt = `Bạn là chuyên gia dinh dưỡng. Trách nhiệm của bạn là giải thích TẠI SAO các món ăn dưới đây an toàn. Tất cả món đều 100% không chứa chất gây dị ứng của họ.
+HỒ SƠ SỨC KHỎE:
+- Dị ứng: ${preferences.allergies.join(', ')}
+- Ăn kiêng: ${preferences.dietary.join(', ')}
+- Mục tiêu: ${preferences.health_goals.join(', ')}
 
-HỒ SƠ SỨC KHỎE NGƯỜI DÙNG:
-- Dị ứng: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'Không có'}
-- Chế độ ăn kiêng (Dietary): ${preferences.dietary.length > 0 ? preferences.dietary.join(', ') : 'Không có'}
-- Mục tiêu sức khỏe: ${preferences.health_goals.length > 0 ? preferences.health_goals.join(', ') : 'Không có'}
-
-DANH SÁCH MÓN ĂN AN TOÀN (${productList.length} món):
+DANH SÁCH:
 ${JSON.stringify(productList, null, 2)}
 
 YÊU CẦU:
-1. Viết 1 câu giải thích ngắn gọn (tối đa 25 từ) bằng TIẾNG VIỆT cho MỖI món ăn.
-2. Nội dung giải thích phải NÊU BẬT được sự liên quan giữa nguyên liệu món ăn và hồ sơ sức khỏe của người dùng (ví dụ: "Món này hoàn toàn không có đậu phộng và rất giàu đạm, phù hợp để tăng cơ").
-3. Chỉ dự đoán kết quả cho chính xác ${productList.length} món ăn được cung cấp. Cấm bỏ sót món nào.
-4. Trả về JSON theo ĐÚNG định dạng sau:
+1. Giải thích ngắn (max 25 từ) cho MỖI món.
+2. Trả về JSON:
 {
-  "insights": [
-    {
-      "productId": "id của sản phẩm",
-      "aiReason": "Lý do ngắn gọn của AI"
-    }
-  ]
+  "insights": [{"productId": "...", "aiReason": "..."}]
 }
 
 Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.`;
@@ -239,10 +213,10 @@ Bắt buộc trả về thuần JSON, không có text giải thích bên ngoài.
 export const getAIResponseForChat = async (
   history: { role: 'user' | 'model'; parts: { text: string }[] }[],
   message: string,
-  userContext?: { 
-    fullName: string; 
-    preferences: Preferences; 
-    safeProducts: { name: string; description: string }[] 
+  userContext?: {
+    fullName: string;
+    preferences: Preferences;
+    safeProducts: { name: string; description: string }[]
   } | null
 ): Promise<string> => {
   // Transform Gemini-style history to Groq-compatible history

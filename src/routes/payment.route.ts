@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { payosWebhookHandler } from '@/controllers/payment.controller';
+import { payosCancelHandler, payosWebhookHandler } from '@/controllers/payment.controller';
 
 const paymentRoutes = Router();
 
@@ -8,5 +8,8 @@ const paymentRoutes = Router();
  * PayOS sends POST request to this endpoint
  */
 paymentRoutes.post('/webhook/payos', payosWebhookHandler);
+
+// Called by FE after PayOS redirects user back with cancelUrl params
+paymentRoutes.get('/payos/cancel', payosCancelHandler);
 
 export default paymentRoutes;
