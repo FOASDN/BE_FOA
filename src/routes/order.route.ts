@@ -5,6 +5,9 @@ import {
   getOrderDetailHandler,
   placeOrderHandler,
   updateOrderStatusHandler,
+  getWeeklyRevenueHandler,
+  getDashboardStatsHandler,
+  getRecentOrdersHandler,
 } from '@/controllers/order.controller';
 import { authenticate, authorize } from '@/middlewares';
 import { Role } from '@/types/user.type';
@@ -29,5 +32,8 @@ orderRoutes.patch('/:id/status', authenticate, authorize(Role.ADMIN, Role.STAFF)
 
 // PATCH /api/orders/:id/cancel — Cancel an order
 orderRoutes.patch('/:id/cancel', authenticate, cancelOrderHandler);
-
+//get /api/orders/revenue/weekly
+orderRoutes.get('/orders/revenue/weekly', getWeeklyRevenueHandler);
+orderRoutes.get('/orders/dashboard/stats', getDashboardStatsHandler);
+orderRoutes.get('/orders/recent', getRecentOrdersHandler);
 export default orderRoutes;

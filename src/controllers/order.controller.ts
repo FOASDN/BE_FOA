@@ -1,5 +1,14 @@
 import { CREATED, OK } from '@/constants/http';
-import { getOrderById, getOrders, getUserOrders, placeOrder, updateOrderStatus } from '@/services/order.service';
+import {
+  getOrderById,
+  getOrders,
+  getUserOrders,
+  placeOrder,
+  updateOrderStatus,
+  getWeeklyRevenue,
+  getDashboardStats,
+  getRecentOrders,
+} from '@/services/order.service';
 import { OrderStatus } from '@/types/order.type';
 import { catchErrors } from '@/utils/asyncHandler';
 import { placeOrderValidator } from '@/validators/order.validator';
@@ -77,4 +86,19 @@ export const updateOrderStatusHandler = catchErrors(async (req, res) => {
 export const cancelOrderHandler = catchErrors(async (req, res) => {
   const order = await updateOrderStatus(req.params.id, OrderStatus.CANCELLED);
   return res.success(OK, { data: order, message: 'Đã hủy đơn hàng' });
+});
+
+export const getWeeklyRevenueHandler = catchErrors(async (_req, res) => {
+  const revenue = await getWeeklyRevenue();
+  return res.success(OK, { data: revenue });
+});
+
+export const getDashboardStatsHandler = catchErrors(async (_req, res) => {
+  const stats = await getDashboardStats();
+  return res.success(OK, { data: stats });
+});
+
+export const getRecentOrdersHandler = catchErrors(async (_req, res) => {
+  const orders = await getRecentOrders();
+  return res.success(OK, { data: orders });
 });
