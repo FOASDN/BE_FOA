@@ -27,7 +27,11 @@ const DEFAULT_BASE_FEE = 15_000;
 const DEFAULT_FEE_PER_KM = 5_000;
 const DEFAULT_FREE_THRESHOLD = 300_000;
 
-export async function calculateShippingFee(district: string, city: string, subtotal: number): Promise<{ fee: number; blocked: boolean; reason?: string }> {
+export async function calculateShippingFee(
+  district: string,
+  city: string,
+  subtotal: number
+): Promise<{ fee: number; blocked: boolean; reason?: string }> {
   const normalCity = city.trim();
   const normalDistrict = district.trim();
 
@@ -207,11 +211,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
 
     // Validate shipping fee is correct for the destination
     const shippingResult = await calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
-    appAssert(
-      !shippingResult.blocked,
-      BAD_REQUEST,
-      shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng'
-    );
+    appAssert(!shippingResult.blocked, BAD_REQUEST, shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng');
     appAssert(
       shippingResult.fee === shipping_fee,
       BAD_REQUEST,
@@ -310,9 +310,26 @@ export const getUserOrders = async (userId: mongoose.Types.ObjectId) => {
 /**
  * Get all orders (for Admin/Staff)
  */
-export const getOrders = async (filters: any = {}) => {
-  return OrderModel.find(filters)
+export const getOrders = async (query: any = {}) => {
+  const { limit, page, status, ...rest } = query;
+
+  const mongoFilter: any = {};
+
+  if (status) {
+    mongoFilter.status = status;
+  }
+
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 1000));
+  const safePage = Math.max(1, Number(page) || 1);
+  const skip = (safePage - 1) * safeLimit;
+
+  return OrderModel.find({
+    ...mongoFilter,
+    ...rest,
+  })
     .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(safeLimit)
     .populate('user_id', 'username email phone')
     .populate({
       path: 'items.product_id',
@@ -400,4 +417,73 @@ export const confirmPayment = async (orderCode: number) => {
   }
 
   return order;
+};
+
+export const getWeeklyRevenue = async () => {
+  const revenue = await OrderModel.aggregate([
+    {
+      $match: {
+        status: OrderStatus.COMPLETED,
+      },
+    },
+    {
+      $group: {
+        _id: { $dayOfWeek: '$createdAt' },
+        revenue: { $sum: '$total_price' },
+        orders: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const fullWeek = [
+    { _id: 2, day: 'T2', revenue: 0, orders: 0 },
+    { _id: 3, day: 'T3', revenue: 0, orders: 0 },
+    { _id: 4, day: 'T4', revenue: 0, orders: 0 },
+    { _id: 5, day: 'T5', revenue: 0, orders: 0 },
+    { _id: 6, day: 'T6', revenue: 0, orders: 0 },
+    { _id: 7, day: 'T7', revenue: 0, orders: 0 },
+    { _id: 1, day: 'CN', revenue: 0, orders: 0 },
+  ];
+
+  const merged = fullWeek.map((dayItem) => {
+    const found = revenue.find((item) => item._id === dayItem._id);
+    return found
+      ? {
+          ...dayItem,
+          revenue: found.revenue,
+          orders: found.orders,
+        }
+      : dayItem;
+  });
+
+  return merged;
+};
+export const getDashboardStats = async () => {
+  const stats = await OrderModel.aggregate([
+    {
+      $match: {
+        status: OrderStatus.COMPLETED,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: '$total_price' },
+        totalOrders: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return (
+    stats[0] || {
+      totalRevenue: 0,
+      totalOrders: 0,
+    }
+  );
+};
+export const getRecentOrders = async () => {
+  return OrderModel.find().sort({ createdAt: -1 }).limit(5).populate('user_id', 'username email phone');
 };
