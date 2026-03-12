@@ -7,10 +7,17 @@ import { verifyToken } from '@/utils/jwt';
 import { UserModel } from '@/models';
 
 const authenticate: RequestHandler = catchErrors(async (req, res, next) => {
-  const accessToken = req.cookies.accessToken as string | undefined;
+  // Try to read token from cookie first, then fallback to Authorization header (Bearer ...)
+  let accessToken = req.cookies.accessToken as string | undefined;
+  if (!accessToken) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.slice(7).trim();
+    }
+  }
   appAssert(accessToken, UNAUTHORIZED, 'Not authorized', AppErrorCode.InvalidAccessToken);
 
-  const { error, payload } = verifyToken(accessToken);
+  const { error, payload } = verifyToken(accessToken as string);
   appAssert(
     payload,
     UNAUTHORIZED,

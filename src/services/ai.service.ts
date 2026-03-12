@@ -33,14 +33,41 @@ export const getAIRecommendations = async (
   preferences: Preferences,
   similarUsersTopProducts?: string[] // Collaborative filtering context
 ): Promise<AIRecommendation[]> => {
+  // ------------------------------------------------------------
+  // 1️⃣ Cache layer (in‑memory) – avoid re‑calling AI for the same
+  //    preferences + product set within a short time window.
+  // ------------------------------------------------------------
+  const cacheKey = JSON.stringify({
+    pref: preferences,
+    ids: products.map((p) => p._id.toString()).sort(),
+    similar: similarUsersTopProducts,
+  });
+  // Simple static cache (could be replaced by Redis later)
+  const staticCache = (global as any).__aiRecCache as Map<string, AIRecommendation[]> || new Map();
+  (global as any).__aiRecCache = staticCache;
+  if (staticCache.has(cacheKey)) {
+    return staticCache.get(cacheKey)!;
+  }
+
+  // ------------------------------------------------------------
+  // 2️⃣ Reduce prompt size – only send a reasonable number of
+  //    candidate products. We keep the top 30 by rating (or price if
+  //    needed) to keep token usage low and response time fast.
+  // ------------------------------------------------------------
+  const MAX_PRODUCTS_IN_PROMPT = 30;
+  const sortedProducts = [...products]
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, MAX_PRODUCTS_IN_PROMPT);
+
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     generationConfig: {
-      temperature: 0.9, // Tăng sự đa dạng cho kết quả
+      // Lower temperature for more deterministic, accurate answers.
+      temperature: 0.2,
     },
   });
 
-  const productList = products.map((p) => ({
+  const productList = sortedProducts.map((p) => ({
     id: p._id.toString(),
     name: p.name,
     description: p.description,
@@ -116,7 +143,7 @@ Chỉ trả về JSON, không giải thích thêm.`;
 export const parseOrderNoteForStaff = async (rawNote?: string): Promise<string[]> => {
   if (!rawNote?.trim()) return [];
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
 Bạn là trợ lý xử lý đơn cho cửa hàng đồ ăn.
@@ -180,7 +207,7 @@ export const getAISafeFoodInsights = async (
   if (productsToAnalyze.length === 0) return [];
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     generationConfig: { temperature: 0.4 },
   });
 
