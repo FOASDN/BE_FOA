@@ -6,6 +6,14 @@ export enum Role {
   CUSTOMER = 'CUSTOMER',
 }
 
+export enum UserTier {
+  BRONZE = 'Bronze',
+  SILVER = 'Silver',
+  GOLD = 'Gold',
+  PLATINUM = 'Platinum',
+  DIAMOND = 'Diamond',
+}
+
 export interface IAddresses {
   label: string;
   receiver_name: string;
@@ -23,6 +31,12 @@ export interface IPreferences {
   health_goals: string[];
 }
 
+export interface IHealthProfile {
+  allergies: string[];
+  conditions: string[];
+  dietaryGoals: string[];
+}
+
 export default interface IUser extends mongoose.Document<mongoose.Types.ObjectId> {
   username: string;
   email: string;
@@ -36,12 +50,17 @@ export default interface IUser extends mongoose.Document<mongoose.Types.ObjectId
   verified_at: Date;
   isActive: boolean;
   collected_points: number;
+  tier: UserTier;
+  referral_code: string;
+  referred_by?: mongoose.Types.ObjectId | null;
 
   aiRecommendationsCache?: {
     data?: any;
     safeFoodsData?: any;
     updatedAt: Date;
   };
+
+  healthProfile?: IHealthProfile;
 
   comparePassword(password: string): Promise<boolean>;
   omitPassword(): Omit<IUser, 'password_hash'>;

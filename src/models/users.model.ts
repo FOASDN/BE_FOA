@@ -1,8 +1,9 @@
 import { EMAIL_REGEX, INTERNATIONAL_PHONE_REGEX, VIETNAM_PHONE_REGEX } from '@/constants/regex';
 import { IUser } from '@/types';
-import { IAddresses, Role } from '@/types/user.type';
+import { IAddresses, IHealthProfile, Role, UserTier } from '@/types/user.type';
 import { compareValue, hashValue } from '@/utils/bcrypt';
 import mongoose from 'mongoose';
+import { randomBytes } from 'crypto';
 
 const isValidPhone = (v: string) => VIETNAM_PHONE_REGEX.test(v) || INTERNATIONAL_PHONE_REGEX.test(v);
 
@@ -73,6 +74,21 @@ const UserSchema = new mongoose.Schema<IUser>(
       default: 0,
       min: [0, 'Collected points cannot be negative'],
     },
+    tier: {
+      type: String,
+      enum: UserTier,
+      default: UserTier.BRONZE,
+    },
+    referral_code: {
+      type: String,
+      unique: true,
+      uppercase: true,
+    },
+    referred_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     preferences: {
       type: PreferencesSchema,
       default: () => ({ dietary: [], allergies: [], health_goals: [] }),
@@ -99,8 +115,12 @@ UserSchema.index({ username: 1 }, { unique: true });
 // Middleware "pre-save" trong Mongoose:
 // Hàm này sẽ tự động chạy TRƯỚC KHI document được lưu (save) vào MongoDB
 UserSchema.pre('save', async function (next) {
+  // Generate referral_code for new users
+  if (this.isNew && !this.referral_code) {
+    this.referral_code = `FOODIE-${randomBytes(4).toString('hex').toUpperCase()}`;
+  }
+
   // ✅ Kiểm tra xem field "password" có bị thay đổi không
-  // Nếu KHÔNG thay đổi (ví dụ chỉ update email, name,...) thì bỏ qua việc hash lại
   if (!this.isModified('password_hash')) return next();
 
   // ✅ Nếu password đã thay đổi hoặc là lần đầu tạo user,

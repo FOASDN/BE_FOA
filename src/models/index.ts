@@ -1,11 +1,32 @@
-export { default as UserModel } from './users.model';
-export { default as RefreshTokenModel } from './refresh-token.model';
-export { default as VerificationModel } from './verificationCode.model';
-export { default as FileModel } from './file.model';
-export { default as ProductModel } from './product.model';
-export { default as CartModel } from './cart.model';
-export { default as VoucherModel } from './voucher.model';
-export { default as OrderModel } from './order.model';
-export { default as ReviewModel } from './review.model';
-export { default as NotificationModel } from './notification.model';
-export { default as AuditLogModel } from './audit-log.model';
+import UserModel from './users.model';
+import RefreshTokenModel from './refresh-token.model';
+import VerificationModel from './verificationCode.model';
+import FileModel from './file.model';
+import ProductModel from './product.model';
+import CartModel from './cart.model';
+import VoucherModel from './voucher.model';
+import OrderModel from './order.model';
+import ReviewModel from './review.model';
+import NotificationModel from './notification.model';
+import AuditLogModel from './audit-log.model';
+import PointTransactionModel from './point-transaction.model';
+import { SupportConversationModel, SupportMessageModel } from './support-chat.model';
+import { SupportSettingsModel } from './support-settings.model';
+
+export {
+  UserModel,
+  RefreshTokenModel,
+  VerificationModel,
+  FileModel,
+  ProductModel,
+  CartModel,
+  VoucherModel,
+  OrderModel,
+  ReviewModel,
+  NotificationModel,
+  AuditLogModel,
+  PointTransactionModel,
+  SupportConversationModel,
+  SupportMessageModel,
+  SupportSettingsModel,
+};

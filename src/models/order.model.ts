@@ -1,4 +1,4 @@
-import { IDeliveryAddress, IOrderItem, IOrderItemVariation, OrderStatus, PaymentMethod } from '@/types/order.type';
+import { ICancellation, IDeliveryAddress, IOrderItem, IOrderItemVariation, OrderStatus, PaymentMethod } from '@/types/order.type';
 import { IOrder } from '@/types';
 import mongoose from 'mongoose';
 import { randomUUID } from 'crypto';
@@ -53,6 +53,16 @@ const DeliveryInfoSchema = new mongoose.Schema(
   }
 );
 
+const CancellationSchema = new mongoose.Schema<ICancellation>(
+  {
+    reason: { type: String, required: true },
+    cancelled_by: { type: String, enum: ['staff', 'customer'], required: true },
+    refund_required: { type: Boolean, default: false },
+    refunded_at: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const OrderSchema = new mongoose.Schema<IOrder>(
   {
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -79,9 +89,12 @@ const OrderSchema = new mongoose.Schema<IOrder>(
       method: { type: String, required: true, enum: PaymentMethod, default: PaymentMethod.CASH_ON_DELIVERY },
       paid_at: { type: Date },
       payos_order_code: { type: Number, unique: true, sparse: true },
+      cash_collected_at: { type: Date, default: null },
+      cash_collected_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     },
     delivery_address: { type: DeliveryAddressSchema, required: true },
     delivery_info: { type: DeliveryInfoSchema, required: true },
+    cancellation: { type: CancellationSchema, default: null },
   },
   {
     timestamps: true,

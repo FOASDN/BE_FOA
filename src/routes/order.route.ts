@@ -1,10 +1,15 @@
 import {
   cancelOrderHandler,
+  confirmOrderHandler,
   getAllOrdersHandler,
   getMyOrdersHandler,
   getOrderDetailHandler,
+  markReadyHandler,
   placeOrderHandler,
+  rejectOrderHandler,
   updateOrderStatusHandler,
+  assignDeliveryHandler,
+  completeDeliveryHandler,
 } from '@/controllers/order.controller';
 import { authenticate, authorize } from '@/middlewares';
 import { Role } from '@/types/user.type';
@@ -29,5 +34,21 @@ orderRoutes.patch('/:id/status', authenticate, authorize(Role.ADMIN, Role.STAFF)
 
 // PATCH /api/orders/:id/cancel — Cancel an order
 orderRoutes.patch('/:id/cancel', authenticate, cancelOrderHandler);
+
+// ── Staff-only actions ────────────────────────────────────────────────────
+// PATCH /api/orders/:id/confirm — Staff nhận đơn (PENDING → CONFIRMED)
+orderRoutes.patch('/:id/confirm', authenticate, authorize(Role.STAFF, Role.ADMIN), confirmOrderHandler);
+
+// PATCH /api/orders/:id/reject  — Staff từ chối (PENDING → CANCELLED)
+orderRoutes.patch('/:id/reject', authenticate, authorize(Role.STAFF, Role.ADMIN), rejectOrderHandler);
+
+// PATCH /api/orders/:id/ready   — Staff đánh dấu xong (CONFIRMED/PROCESSING → READY_FOR_DELIVERY)
+orderRoutes.patch('/:id/ready', authenticate, authorize(Role.STAFF, Role.ADMIN), markReadyHandler);
+
+// PATCH /api/orders/:id/deliver — Staff đi giao (READY_FOR_DELIVERY → SHIPPING)
+orderRoutes.patch('/:id/deliver', authenticate, authorize(Role.STAFF, Role.ADMIN), assignDeliveryHandler);
+
+// PATCH /api/orders/:id/complete — Staff giao xong (SHIPPING → COMPLETED)
+orderRoutes.patch('/:id/complete', authenticate, authorize(Role.STAFF, Role.ADMIN), completeDeliveryHandler);
 
 export default orderRoutes;

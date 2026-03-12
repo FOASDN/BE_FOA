@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { catchErrors } from '@/utils/asyncHandler';
 import { OK } from '@/constants/http';
 import { verifyWebhookData } from '@/services/payos.service';
-import { confirmPayment } from '@/services/order.service';
+import { cancelPayosPayment, confirmPayment } from '@/services/order.service';
 
 /**
  * Handle Webhook from PayOS
@@ -23,5 +23,28 @@ export const payosWebhookHandler = catchErrors(async (req: Request, res: Respons
   return res.status(OK).json({
     success: true,
     message: 'Webhook received and processed',
+  });
+});
+
+/**
+ * Cancel PayOS payment (called by FE after redirect from PayOS cancelUrl)
+ * GET /api/payments/payos/cancel?orderCode=123
+ */
+export const payosCancelHandler = catchErrors(async (req: Request, res: Response) => {
+  const raw = req.query.orderCode;
+  const orderCode = Number(raw);
+
+  if (!raw || Number.isNaN(orderCode)) {
+    return res.status(OK).json({
+      success: false,
+      message: 'Thiếu hoặc sai orderCode',
+    });
+  }
+
+  await cancelPayosPayment(orderCode);
+
+  return res.status(OK).json({
+    success: true,
+    message: 'Đã hủy đơn hàng do thanh toán bị hủy',
   });
 });

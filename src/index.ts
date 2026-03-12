@@ -1,10 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import http from 'http';
+import { Server } from 'socket.io';
+import { parse as parseCookie } from 'cookie';
 import { APP_ORIGIN, PORT } from './constants/env';
 import appRoutes from './routes';
 import connectToDatabase from './config/db';
 import { customResponse, errorHandler } from './middlewares';
+import { verifyToken } from '@/utils/jwt';
+import { SupportConversationModel } from '@/models';
 
 const app = express();
 //middleware
@@ -41,7 +46,73 @@ app.use('/api', appRoutes);
 // error handler 
 app.use(errorHandler);
 
-app.listen(PORT, async () => {
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
+
+app.set('io', io);
+
+io.on('connection', (socket) => {
+  // Auth (cookie-based)
+  try {
+    const rawCookie = socket.handshake.headers.cookie || '';
+    const parsed = parseCookie(rawCookie);
+    const accessToken = parsed.accessToken ?? '';
+    const { payload } = verifyToken(accessToken);
+    if (payload) {
+      socket.data.userId = payload.user_id;
+      socket.data.role = payload.role;
+      console.debug(`[Socket] Connected: userId=${payload.user_id} role=${payload.role} socketId=${socket.id}`);
+    } else {
+      console.debug(`[Socket] Connected UNAUTHENTICATED (no payload) socketId=${socket.id}`);
+    }
+  } catch (e) {
+    console.debug(`[Socket] Auth error socketId=${socket.id}:`, (e as Error).message);
+  }
+
+  socket.on('support:join', async (conversationId: string, cb?: (ok: boolean) => void) => {
+    const userId = socket.data.userId as string | undefined;
+    const role = socket.data.role as string | undefined;
+    console.debug(`[Socket] support:join conversationId=${conversationId} userId=${userId} role=${role}`);
+    try {
+      if (!userId || !role) {
+        console.debug(`[Socket] join rejected: unauthenticated`);
+        cb?.(false);
+        return;
+      }
+
+      const conv = await SupportConversationModel.findById(conversationId);
+      if (!conv) {
+        console.debug(`[Socket] join rejected: conversation not found id=${conversationId}`);
+        cb?.(false);
+        return;
+      }
+
+      const isOwner = conv.user_id.toString() === userId;
+      const isStaff = role === 'STAFF' || role === 'ADMIN';
+      if (!isOwner && !isStaff) {
+        console.debug(`[Socket] join rejected: not authorized userId=${userId} isOwner=${isOwner} isStaff=${isStaff}`);
+        cb?.(false);
+        return;
+      }
+
+      await socket.join(`support:conversation:${conversationId}`);
+      console.debug(`[Socket] join SUCCESS room=support:conversation:${conversationId}`);
+      cb?.(true);
+    } catch (e) {
+      console.debug(`[Socket] join error:`, (e as Error).message);
+      cb?.(false);
+    }
+  });
+});
+
+server.listen(PORT, async () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   await connectToDatabase();
 });

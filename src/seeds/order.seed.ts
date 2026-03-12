@@ -51,7 +51,7 @@ async function createOrder(
     const order = new OrderModel({
         user_id: userId,
         code: randomUUID().toUpperCase(),
-        status: OrderStatus.completed,
+        status: OrderStatus.COMPLETED,
         items: orderItems,
         voucher: null,
         sub_total,
