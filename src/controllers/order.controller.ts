@@ -14,6 +14,7 @@ import {
   assignDelivery,
   completeDelivery,
 } from '@/services/order.service';
+import { createOrderStatusNotification } from '@/services/notification.service';
 import { OrderStatus } from '@/types/order.type';
 import { catchErrors } from '@/utils/asyncHandler';
 import { placeOrderValidator } from '@/validators/order.validator';
@@ -95,6 +96,27 @@ export const getOrderDetailHandler = catchErrors(async (req, res) => {
 export const updateOrderStatusHandler = catchErrors(async (req, res) => {
   const { status } = req.body;
   const order = await updateOrderStatus(req.params.id, status);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã chuyển sang trạng thái: ${order.status}`,
+    });
+  }
+
   return res.success(OK, { data: order });
 });
 
@@ -103,6 +125,28 @@ export const updateOrderStatusHandler = catchErrors(async (req, res) => {
  */
 export const cancelOrderHandler = catchErrors(async (req, res) => {
   const order = await updateOrderStatus(req.params.id, OrderStatus.CANCELLED);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const { reason } = req.body;
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã bị hủy${reason ? `. Lý do: ${reason}` : ''}`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đã hủy đơn hàng' });
 });
 
@@ -126,6 +170,27 @@ export const getRecentOrdersHandler = catchErrors(async (_req, res) => {
  */
 export const confirmOrderHandler = catchErrors(async (req, res) => {
   const order = await confirmOrder(req.params.id, req.userId);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã được xác nhận và đang được chuẩn bị`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đã xác nhận đơn hàng, bắt đầu chế biến' });
 });
 
@@ -135,6 +200,27 @@ export const confirmOrderHandler = catchErrors(async (req, res) => {
 export const rejectOrderHandler = catchErrors(async (req, res) => {
   const { reason } = z.object({ reason: z.string().min(1, 'Vui lòng cung cấp lý do từ chối') }).parse(req.body);
   const order = await rejectOrder(req.params.id, req.userId, reason);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã bị từ chối. Lý do: ${reason}`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đã từ chối đơn hàng' });
 });
 
@@ -143,6 +229,27 @@ export const rejectOrderHandler = catchErrors(async (req, res) => {
  */
 export const markReadyHandler = catchErrors(async (req, res) => {
   const order = await markOrderReady(req.params.id, req.userId);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã chuẩn bị xong và sẵn sàng để giao`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đơn hàng đã sẵn sàng để giao' });
 });
 
@@ -151,6 +258,27 @@ export const markReadyHandler = catchErrors(async (req, res) => {
  */
 export const assignDeliveryHandler = catchErrors(async (req, res) => {
   const order = await assignDelivery(req.params.id, req.userId);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đang được giao đến bạn`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đã nhận giao đơn hàng này' });
 });
 
@@ -159,5 +287,26 @@ export const assignDeliveryHandler = catchErrors(async (req, res) => {
  */
 export const completeDeliveryHandler = catchErrors(async (req, res) => {
   const order = await completeDelivery(req.params.id, req.userId);
+
+  // Create notification record
+  if (order.user_id) {
+    await createOrderStatusNotification({
+      user_id: order.user_id as any,
+      orderCode: order.code,
+      status: order.status,
+    });
+  }
+
+  // Notify user via socket
+  const io = req.app.get('io');
+  if (io && order.user_id) {
+    io.to(`user:${order.user_id}`).emit('order:status_updated', {
+      orderId: order._id,
+      code: order.code,
+      status: order.status,
+      message: `Đơn hàng #${order.code} đã được giao thành công. Chúc bạn ngon miệng!`,
+    });
+  }
+
   return res.success(OK, { data: order, message: 'Đã giao đơn hàng thành công' });
 });
