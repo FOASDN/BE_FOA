@@ -57,6 +57,7 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^20.19.22",
     "@types/nodemailer": "^7.0.5",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
