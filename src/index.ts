@@ -1,3 +1,4 @@
+import 'module-alias/register';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -30,11 +31,11 @@ const corsOptions: cors.CorsOptions = {
     callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(customResponse);
 app.use(cookieParser());
@@ -44,7 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 //app routes
 app.use('/api', appRoutes);
 
-// error handler 
+// error handler
 app.use(errorHandler);
 
 const server = http.createServer(app);
@@ -53,7 +54,7 @@ const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     credentials: true,
-    methods: ["GET", "POST"],
+    methods: ['GET', 'POST'],
   },
 });
 

@@ -17,7 +17,7 @@ const defaults: SignOptions = {
 };
 
 const accessTokenSignOptions: SignOptionsAndSecret = {
-  expiresIn: '15m',
+  expiresIn: '1d',
   secret: AUTH_JWT_SECRET,
 };
 

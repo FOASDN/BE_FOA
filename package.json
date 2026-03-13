@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "BE_LMS - MERN + TS Backend",
   "main": "dist/index.js",
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only  -r tsconfig-paths/register src/index.ts",
     "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
+    "build:prod": "tsc -p tsconfig.build.json --noEmitOnError false && node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
     "start": "node -r tsconfig-paths/register dist/index.js",
     "test": "jest",
     "seed:vouchers": "ts-node -r tsconfig-paths/register src/seeds/voucher.seed.ts",
@@ -33,6 +37,7 @@
     "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^3.0.1",
+    "module-alias": "^2.3.4",
     "mongoose": "^8.2.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
