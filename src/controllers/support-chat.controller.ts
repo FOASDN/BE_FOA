@@ -8,10 +8,6 @@ export const createOrGetConversation = catchErrors(async (req: Request, res: Res
   const userId = new mongoose.Types.ObjectId(req.userId);
   const { orderId } = req.body as { orderId?: string };
 
-  if (!orderId) {
-    return res.status(400).json({ message: 'Thiếu orderId' });
-  }
-
   const conversation = await supportChatService.createOrGetConversation(userId, orderId);
   const convObj = conversation.toObject ? conversation.toObject() : conversation;
   const payload = {
@@ -114,5 +110,12 @@ export const updateSupportSettings = catchErrors(async (req: Request, res: Respo
   const settings = await supportSettingsService.updateSettings(userId, req.body);
   return res.json({ settings });
 });
+
+export const listUserConversations = catchErrors(async (req: Request, res: Response) => {
+  const userId = new mongoose.Types.ObjectId(req.userId);
+  const conversations = await supportChatService.listUserConversations(userId);
+  return res.json({ conversations });
+});
+
 
 

@@ -4,28 +4,33 @@ import { SupportConversationModel, SupportMessageModel } from '@/models';
 import appAssert from '@/utils/appAssert';
 import { getOrderById } from './order.service';
 
-export const createOrGetConversation = async (userId: mongoose.Types.ObjectId, orderIdOrCode: string) => {
-  const order = await getOrderById(orderIdOrCode);
-  // `getOrderById` populates `user_id`, so it can be either ObjectId or a populated document.
-  const orderOwnerId =
-    (order as any).user_id?._id?.toString?.() ??
-    (order as any).user_id?.toString?.();
-  appAssert(
-    orderOwnerId && orderOwnerId === userId.toString(),
-    BAD_REQUEST,
-    'Bạn không có quyền chat cho đơn hàng này'
-  );
+export const createOrGetConversation = async (userId: mongoose.Types.ObjectId, orderIdOrCode?: string) => {
+  let orderIdToUse = null;
+
+  if (orderIdOrCode) {
+    const order = await getOrderById(orderIdOrCode);
+    // `getOrderById` populates `user_id`, so it can be either ObjectId or a populated document.
+    const orderOwnerId =
+      (order as any).user_id?._id?.toString?.() ??
+      (order as any).user_id?.toString?.();
+    appAssert(
+      orderOwnerId && orderOwnerId === userId.toString(),
+      BAD_REQUEST,
+      'Bạn không có quyền chat cho đơn hàng này'
+    );
+    orderIdToUse = order._id;
+  }
 
   let conversation = await SupportConversationModel.findOne({
     user_id: userId,
-    order_id: order._id,
+    order_id: orderIdToUse,
     status: 'open',
   });
 
   if (!conversation) {
     conversation = await SupportConversationModel.create({
       user_id: userId,
-      order_id: order._id,
+      order_id: orderIdToUse,
       store_id: null,
       status: 'open',
     });
@@ -98,7 +103,7 @@ export const listStaffConversations = async () => {
 
       return {
         id: conv._id.toString(),
-        orderCode: order?.code ?? '',
+        orderCode: order?.code ?? 'Tư vấn',
         orderId: order?._id?.toString() ?? '',
         customerName: user?.username ?? 'Khách hàng',
         lastMessage: lastMessage
@@ -148,5 +153,47 @@ export const closeConversation = async (conversationId: string) => {
   appAssert(conversation, NOT_FOUND, 'Không tìm thấy cuộc trò chuyện');
   return conversation;
 };
+
+export const listUserConversations = async (userId: mongoose.Types.ObjectId) => {
+  const conversations = await SupportConversationModel.find({ user_id: userId })
+    .sort({ updatedAt: -1 })
+    .populate('order_id');
+
+  const results = await Promise.all(
+    conversations.map(async (conv) => {
+      const [lastMessage] = await SupportMessageModel.find({ conversation_id: conv._id })
+        .sort({ createdAt: -1 })
+        .limit(1);
+      
+      const unreadCount = await SupportMessageModel.countDocuments({
+        conversation_id: conv._id,
+        sender_type: 'STAFF',
+        is_read: false,
+      });
+
+      const order: any = conv.order_id;
+
+      return {
+        id: conv._id.toString(),
+        orderCode: order?.code ?? 'Tư vấn',
+        orderId: order?._id?.toString() ?? '',
+        lastMessage: lastMessage
+          ? {
+            content: lastMessage.content,
+            image_url: lastMessage.image_url,
+            createdAt: lastMessage.createdAt.toISOString(),
+            senderType: lastMessage.sender_type,
+          }
+          : undefined,
+        unreadCount,
+        status: conv.status,
+        updatedAt: conv.updatedAt.toISOString(),
+      };
+    })
+  );
+
+  return results;
+};
+
 
 

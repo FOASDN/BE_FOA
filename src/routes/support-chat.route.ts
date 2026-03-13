@@ -8,7 +8,8 @@ import {
     markAsRead,
     closeConversation,
     getSupportSettings,
-    updateSupportSettings
+    updateSupportSettings,
+    listUserConversations
 } from '@/controllers/support-chat.controller';
 
 const supportChatRoutes = Router();
@@ -22,6 +23,7 @@ supportChatRoutes.get('/conversations/:id/messages', getMessages);
 supportChatRoutes.post('/conversations/:id/messages', sendMessage);
 supportChatRoutes.patch('/conversations/:id/read', markAsRead);
 supportChatRoutes.patch('/conversations/:id/close', closeConversation);
+supportChatRoutes.get('/conversations', listUserConversations);
 
 // Settings
 supportChatRoutes.get('/settings', getSupportSettings);
