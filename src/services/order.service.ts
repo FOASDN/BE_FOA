@@ -213,14 +213,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
-    // Validate shipping fee is correct for the destination
-    const shippingResult = await calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
-    appAssert(!shippingResult.blocked, BAD_REQUEST, shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng');
-    appAssert(
-      shippingResult.fee === shipping_fee,
-      BAD_REQUEST,
-      `Phí giao hàng không khớp (Server tính: ${shippingResult.fee}đ, Client gửi: ${shipping_fee}đ)`
-    );
+    // Keep client's shipping fee and bypass server calculation/validation as requested
     const rawNote = input.note?.trim() || undefined;
     const staffNoteItems = rawNote ? await parseOrderNoteForStaff(rawNote) : [];
 
