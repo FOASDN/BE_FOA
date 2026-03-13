@@ -15,6 +15,7 @@ const app = express();
 //middleware
 const allowedOrigins = [
   APP_ORIGIN,
+  "https://fefoa.vercel.app",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
