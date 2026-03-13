@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "BE_LMS - MERN + TS Backend",
   "main": "dist/index.js",
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only  -r tsconfig-paths/register src/index.ts",
     "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
