@@ -4,6 +4,7 @@ import {
   deleteProductHandler,
   getAllProductsHandler,
   getProductByIdHandler,
+  getProductCategoriesHandler,
   updateProductHandler
 } from '@/controllers/product.controller';
 import { getRecommendationsHandler, getSafeFoodsHandler } from '@/controllers/recommendation.controller';
@@ -15,6 +16,7 @@ const router = Router();
 
 // Public routes
 router.get('/', getAllProductsHandler);
+router.get('/categories', getProductCategoriesHandler);
 
 // AI-powered routes (authenticated)
 router.get('/recommendations', authenticate, getRecommendationsHandler);

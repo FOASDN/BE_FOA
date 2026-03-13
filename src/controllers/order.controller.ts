@@ -30,6 +30,18 @@ export const placeOrderHandler = catchErrors(async (req, res) => {
 
   const order = await placeOrder(userId, input);
 
+  // Notify staff via socket (best-effort)
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('order:new', {
+      _id: order._id,
+      code: order.code,
+      total_price: order.total_price,
+      itemsCount: order.items.length,
+      createdAt: (order as any).createdAt || new Date(),
+    });
+  }
+
   return res.success(CREATED, {
     data: {
       _id: order._id,

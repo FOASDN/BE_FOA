@@ -48,7 +48,7 @@ app.use(errorHandler);
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     credentials: true,

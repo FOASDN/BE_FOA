@@ -5,10 +5,17 @@ import {
   createProduct,
   deleteProduct,
   getAllProducts,
+  getDistinctCategories,
   getProductById,
   updateProduct
 } from '@/services/product.service';
 import { productValidator, updateProductValidator } from '@/validators/product.validator';
+
+// GET /api/products/categories
+export const getProductCategoriesHandler = catchErrors(async (req: Request, res: Response) => {
+  const categories = await getDistinctCategories();
+  return res.success(OK, { data: categories });
+});
 
 // GET /api/products
 export const getAllProductsHandler = catchErrors(async (req: Request, res: Response) => {
