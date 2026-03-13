@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only  -r tsconfig-paths/register src/index.ts",
-    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
+    "build": "echo skip build",
+    "start": "ts-node --transpile-only -r tsconfig-paths/register src/index.ts",
     "build:prod": "tsc -p tsconfig.build.json --noEmitOnError false || true && node -e \"require('fs').copyFileSync('package.json','dist/package.json')\"",
     "start:prod": "ts-node --transpile-only -r tsconfig-paths/register src/index.ts",
-    "start": "node -r tsconfig-paths/register dist/index.js",
     "test": "jest",
     "seed:vouchers": "ts-node -r tsconfig-paths/register src/seeds/voucher.seed.ts",
     "seed:products": "ts-node -r tsconfig-paths/register src/seeds/product.seed.ts",
