@@ -94,6 +94,11 @@ export const getAllProducts = async (filters: ProductFilters) => {
   };
 };
 
+export const getDistinctCategories = async () => {
+  const categories = await ProductModel.distinct('category');
+  return categories;
+};
+
 export const getProductById = async (id: string) => {
   const product = await ProductModel.findById(id).populate('image').lean();
   appAssert(product, NOT_FOUND, 'Product not found');

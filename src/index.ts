@@ -49,7 +49,7 @@ app.use(errorHandler);
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     credentials: true,
@@ -70,6 +70,10 @@ io.on('connection', (socket) => {
       socket.data.userId = payload.user_id;
       socket.data.role = payload.role;
       console.debug(`[Socket] Connected: userId=${payload.user_id} role=${payload.role} socketId=${socket.id}`);
+
+      // Join user specific room for targeted notifications
+      socket.join(`user:${payload.user_id}`);
+      console.debug(`[Socket] Joined room: user:${payload.user_id}`);
     } else {
       console.debug(`[Socket] Connected UNAUTHENTICATED (no payload) socketId=${socket.id}`);
     }
