@@ -15,6 +15,7 @@ import { AuditEntityType, AuditLogAction } from '@/types/audit-log.type';
 import * as membershipService from './membership.service';
 import { PointTransactionType } from '@/types/point-transaction.type';
 import { createOrderStatusNotification } from './notification.service';
+import { scheduleAiModelRetrain } from './ai-retrain.service';
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,69 @@ const calcDiscount = (
 };
 
 // ────────────────────────────────────────────────────────────────────────────
+// FSS-40: Server-side allergy soft-check (defense-in-depth)
+// Does NOT block the order — returns warnings so FE can display them.
+// ────────────────────────────────────────────────────────────────────────────
+
+import { buildForbiddenKeywordSet, fuzzyMatch } from '@/utils/healthFilter';
+
+interface AllergyWarning {
+  productName: string;
+  conflictIngredients: string[];
+  level: 'danger' | 'warning';
+}
+
+async function checkOrderHealthConflicts(
+  resolvedItems: ResolvedItem[],
+  preferences: any,
+  session: mongoose.ClientSession
+): Promise<AllergyWarning[]> {
+  const forbiddenKeywords = buildForbiddenKeywordSet(preferences);
+
+  if (forbiddenKeywords.size === 0) return [];
+
+  const warnings: AllergyWarning[] = [];
+
+  for (const item of resolvedItems) {
+    const product = await ProductModel.findById(item.product_id).session(session).lean();
+    if (!product) continue;
+
+    const conflictIngredients: string[] = [];
+    const recipe: { name: string }[] = (product as any).recipe ?? [];
+    const tagList: string[] = [
+      ...((product as any).tags ?? []),
+      ...((product as any).health_tags ?? []),
+    ];
+
+    const keywordsToScan = [
+      (product as any).name,
+      (product as any).description,
+      ...recipe.map((r) => r.name),
+      ...tagList,
+    ];
+
+    for (const keyword of keywordsToScan) {
+      if (!keyword) continue;
+      for (const forbidden of forbiddenKeywords) {
+        if (fuzzyMatch(forbidden, keyword) && !conflictIngredients.includes(forbidden)) {
+          conflictIngredients.push(forbidden);
+        }
+      }
+    }
+
+    if (conflictIngredients.length > 0) {
+      warnings.push({
+        productName: product.name,
+        conflictIngredients,
+        level: 'danger',
+      });
+    }
+  }
+
+  return warnings;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // Main service — Place Order
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -213,14 +277,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     const resolvedAddress = delivery_address ?? user.addresses.find((a) => a.isDefault);
     appAssert(resolvedAddress, BAD_REQUEST, 'Không tìm thấy địa chỉ giao hàng. Vui lòng thêm địa chỉ mặc định.');
 
-    // Validate shipping fee is correct for the destination
-    const shippingResult = await calculateShippingFee(resolvedAddress.district, resolvedAddress.city, sub_total);
-    appAssert(!shippingResult.blocked, BAD_REQUEST, shippingResult.reason ?? 'Địa chỉ này không được hỗ trợ giao hàng');
-    appAssert(
-      shippingResult.fee === shipping_fee,
-      BAD_REQUEST,
-      `Phí giao hàng không khớp (Server tính: ${shippingResult.fee}đ, Client gửi: ${shipping_fee}đ)`
-    );
+    // Keep client's shipping fee and bypass server calculation/validation as requested
     const rawNote = input.note?.trim() || undefined;
     const staffNoteItems = rawNote ? await parseOrderNoteForStaff(rawNote) : [];
 
@@ -259,7 +316,18 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
       { session }
     );
 
-    // ── 5. Handle PayOS if Bank Transfer ─────────────────────────────────────
+    // ── 5a. FSS-40: Soft health scan (best-effort, does NOT block order) ────
+    let allergyWarnings: { productName: string; conflictIngredients: string[]; level: string }[] = [];
+    try {
+      allergyWarnings = await checkOrderHealthConflicts(resolvedItems, user.preferences, session);
+      if (allergyWarnings.length > 0) {
+        console.warn(`[FSS-40] Health conflict detected in order for user ${user.email}:`, allergyWarnings);
+      }
+    } catch (e) {
+      console.error('[FSS-40] Health check failed (non-blocking):', e);
+    }
+
+    // ── 5b. Handle PayOS if Bank Transfer ─────────────────────────────────────
     if (payment_method === PaymentMethod.BANK_TRANSFER) {
       console.log('💳 Handling PayOS payment for order:', order.code);
       const numericOrderCode = Date.now();
@@ -286,6 +354,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
         return {
           ...order.toObject(),
           checkoutUrl: paymentLink.checkoutUrl,
+          allergyWarnings,
         };
       } catch (payosError) {
         console.error('❌ PayOS link creation failed:', payosError);
@@ -294,7 +363,7 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
     }
 
     console.log('✅ COD order placed successfully');
-    return order;
+    return { ...order.toObject(), allergyWarnings };
   });
 };
 
@@ -409,8 +478,8 @@ export const getOrders = async (query: any = {}) => {
           order._id as any
         ).catch((err) => console.error('Failed to award points:', err));
       }
+      scheduleAiModelRetrain(`order #${order.code} completed (status update)`);
     }
-
 
     await createOrderStatusNotification({
       user_id: order.user_id._id ? order.user_id._id : order.user_id,
@@ -632,6 +701,8 @@ export const getOrders = async (query: any = {}) => {
       ).catch((err) => console.error('Failed to award points:', err));
     }
 
+    scheduleAiModelRetrain(`order #${order.code} completed (delivery)`);
+
     createAuditLog({
       actor_user_id: staffId,
       entity_type: AuditEntityType.ORDER,
@@ -701,12 +772,15 @@ export const getOrders = async (query: any = {}) => {
       },
     ]);
 
-    return (
-      stats[0] || {
-        totalRevenue: 0,
-        totalOrders: 0,
-      }
-    );
+    const totalCustomers = await UserModel.countDocuments({ role: 'CUSTOMER' });
+    const totalProducts = await ProductModel.countDocuments();
+
+    return {
+      totalRevenue: stats[0]?.totalRevenue || 0,
+      totalOrders: stats[0]?.totalOrders || 0,
+      totalCustomers,
+      totalProducts,
+    };
   };
   export const getRecentOrders = async () => {
     return OrderModel.find().sort({ createdAt: -1 }).limit(5).populate('user_id', 'username email phone');

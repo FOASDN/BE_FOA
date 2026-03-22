@@ -19,7 +19,7 @@ export const getProductCategoriesHandler = catchErrors(async (req: Request, res:
 
 // GET /api/products
 export const getAllProductsHandler = catchErrors(async (req: Request, res: Response) => {
-  const { category, minPrice, maxPrice, minRating, search, sort, page, limit } = req.query;
+  const { category, minPrice, maxPrice, minRating, search, sort, page, limit, isAvailable } = req.query;
 
   const filters = {
     category: category as string,
@@ -30,6 +30,7 @@ export const getAllProductsHandler = catchErrors(async (req: Request, res: Respo
     sort: sort as string,
     page: page ? Number(page) : 1,
     limit: limit ? Number(limit) : 12,
+    isAvailable: isAvailable === undefined ? undefined : isAvailable === 'true',
   };
 
   const result = await getAllProducts(filters);

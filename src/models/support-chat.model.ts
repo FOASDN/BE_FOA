@@ -4,7 +4,7 @@ import type { ISupportConversation, ISupportMessage } from '@/types/support-chat
 const SupportConversationSchema = new mongoose.Schema<ISupportConversation>(
   {
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    order_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
+    order_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', default: null },
     store_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     status: { type: String, enum: ['open', 'closed'], default: 'open' },
   },
@@ -13,7 +13,7 @@ const SupportConversationSchema = new mongoose.Schema<ISupportConversation>(
   }
 );
 
-SupportConversationSchema.index({ user_id: 1, order_id: 1, status: 1 });
+SupportConversationSchema.index({ user_id: 1, status: 1 });
 
 const SupportMessageSchema = new mongoose.Schema<ISupportMessage>(
   {

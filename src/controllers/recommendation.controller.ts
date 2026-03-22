@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { filterSafeProducts } from '@/utils/healthFilter';
 import { catchErrors } from '@/utils/asyncHandler';
 import { OK } from '@/constants/http';
 import UserModel from '@/models/users.model';
@@ -6,6 +7,7 @@ import ProductModel from '@/models/product.model';
 import FileModel from '@/models/file.model';
 import OrderModel from '@/models/order.model';
 import { getAIRecommendations } from '@/services/ai.service';
+import { sanitizeAiRecommendations } from '@/utils/recommendationAi.util';
 import appAssert from '@/utils/appAssert';
 import { NOT_FOUND } from '@/constants/http';
 import { OrderStatus } from '@/types/order.type';
@@ -118,39 +120,56 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     // 3. Get Products for AI
     const dbProducts = await ProductModel.find({ isAvailable: true })
         .sort({ rating: -1, review_count: -1 })
-        .limit(50);
+        .limit(100);
 
-    const productsForAI = dbProducts.map(p => ({
+    // Strictly filter out any items conflicting with allergies or dietary preferences
+    const safeDbProducts = filterSafeProducts(dbProducts, preferences);
+
+    const productsForAI = safeDbProducts.slice(0, 50).map((p) => ({
         _id: p._id.toString(),
         name: p.name,
         description: p.description,
         category: p.category,
         tags: p.tags,
+        health_tags: p.health_tags ?? [],
         recipe: p.recipe,
         price: p.price,
-        rating: p.rating
+        rating: p.rating,
     }));
+
+    const allowedIdsForAi = new Set(productsForAI.map((p) => p._id));
 
     // 4. Collaborative Filtering: get similar users' top products
     const similarUsersTopProducts = await getSimilarUsersTopProducts(userId!.toString(), preferences);
 
-    // 5. Call AI Service (passes collaborative context to Gemini)
+    // 5. Call AI Service (tries custom ML first, then Groq fallback)
     let recommendations: any[] = [];
     try {
         recommendations = await getAIRecommendations(
             productsForAI,
             preferences,
-            similarUsersTopProducts
+            similarUsersTopProducts,
+            userId!.toString() // Pass userId for CF-based personalization in the ML microservice
         );
     } catch (error) {
         console.error("Gemini AI API Error in Recommendations:", error);
-        // Fallback: Just return top 6 highly rated products from productsForAI
-        recommendations = productsForAI.slice(0, 6).map(p => ({
+        // Fallback: top rated từ pool đã lọc (không ép đủ 6)
+        recommendations = productsForAI.slice(0, Math.min(6, productsForAI.length)).map(p => ({
             productId: p._id,
             reason: 'Sản phẩm được đánh giá cao (Gợi ý dự phòng do lỗi kết nối AI)',
-            healthScore: 80
+            healthScore: 8
         }));
     }
+
+    // 5b. Chỉ giữ ID đã gửi cho AI + xác minh lại an toàn trên bản ghi DB; bổ sung nếu thiếu
+    const candidateIds = [...new Set(recommendations.map((r: any) => String(r.productId)).filter(Boolean))];
+    const fetchedForSanitize = await ProductModel.find({ _id: { $in: candidateIds } }).lean();
+    recommendations = sanitizeAiRecommendations(recommendations, {
+        allowedIds: allowedIdsForAi,
+        preferences,
+        fetchedProducts: fetchedForSanitize,
+        maxCount: 6,
+    });
 
     // 6. Fetch full product data for returned IDs
     const aiProductIds = recommendations.map(r => r.productId);
@@ -176,7 +195,7 @@ export const getRecommendationsHandler = catchErrors(async (req: Request, res: R
     }).filter(item => item !== null);
 
     // 9. Save to Cache
-    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
+    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache').lean();
     const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
 
     await UserModel.updateOne({ _id: userId }, {
@@ -224,10 +243,14 @@ export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Respons
     // Or we just recalculate since safe-foods UI is accessed less frequently. 
     // Wait, the user has `aiRecommendationsCache` which is currently an object. Let's cast it to any to add safeFoods.
     const cache = (user as any).aiRecommendationsCache;
+    console.log(`[SafeFoods Debug] cache exists?`, !!cache, `safeFoodsData exists?`, !!cache?.safeFoodsData, `updatedAt exists?`, !!cache?.updatedAt);
     if (cache && cache.safeFoodsData && cache.updatedAt) {
+        console.log(`[SafeFoods Debug] cache.updatedAt:`, cache.updatedAt, `lastProductUpdatedTime:`, new Date(lastProductUpdatedTime));
         if (cache.updatedAt.getTime() > lastProductUpdatedTime) {
             console.log(`[SafeFoods Cache Hit] Returning cached safe foods for user ${user.email}`);
             return res.status(OK).json(cache.safeFoodsData);
+        } else {
+            console.log(`[SafeFoods Debug] Cache is obsolete.`);
         }
     }
 
@@ -238,41 +261,24 @@ export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Respons
         .sort({ rating: -1, review_count: -1 })
         .lean();
 
-    // 4. Rule-Based Filter: exclude products containing allergen ingredients (100% Safety Guarantee)
-    let safeProducts = allProducts;
-    let unsafeCount = 0;
-
-    if (userAllergies.length > 0) {
-        safeProducts = allProducts.filter(product => {
-            const ingredients = (product.recipe || []).map((r: any) =>
-                r.name.normalize('NFC').toLowerCase().trim()
-            );
-
-            const hasAllergen = ingredients.some((ingredient: string) =>
-                userAllergies.some((allergy: string) => {
-                    const cleanAllergy = allergy.normalize('NFC').toLowerCase().trim();
-                    return ingredient.includes(cleanAllergy) || cleanAllergy.includes(ingredient);
-                })
-            );
-
-            if (hasAllergen) unsafeCount++;
-            return !hasAllergen;
-        });
-    }
+    // 4. Rule-Based Filter: strictly exclude products conflicting with dietary or allergies
+    let safeProducts = filterSafeProducts(allProducts, preferences);
+    let unsafeCount = allProducts.length - safeProducts.length;
 
     // Shuffle and pick 6 items to match the "AI suggestions" behavior
     safeProducts = safeProducts.sort(() => 0.5 - Math.random()).slice(0, 6);
 
     // 5. Get AI Insights for the Safe Products
-    const productsForAI = safeProducts.map(p => ({
+    const productsForAI = safeProducts.map((p) => ({
         _id: p._id.toString(),
         name: p.name,
         description: p.description,
         category: p.category,
         tags: p.tags,
+        health_tags: p.health_tags ?? [],
         recipe: p.recipe,
         price: p.price,
-        rating: p.rating
+        rating: p.rating,
     }));
 
     // Import this at the top of file or use the existing import
@@ -316,7 +322,7 @@ export const getSafeFoodsHandler = catchErrors(async (req: Request, res: Respons
     };
 
     // 7. Save to Cache
-    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache');
+    const currentUser = await UserModel.findById(userId).select('aiRecommendationsCache').lean();
     const currentCache = currentUser?.aiRecommendationsCache || { data: null, safeFoodsData: null, updatedAt: null };
 
     await UserModel.updateOne({ _id: userId }, {

@@ -41,6 +41,7 @@ appRoutes.use('/chat', chatRoutes);
 appRoutes.use('/support', supportChatRoutes);
 appRoutes.use('/payments', paymentRoutes);
 appRoutes.use('/settings', settingsRoute);
+
 appRoutes.post('/upload', uploadImage.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Thiếu ảnh' });
 

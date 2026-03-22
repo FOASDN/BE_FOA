@@ -20,10 +20,10 @@ export const handleChat = async (req: Request, res: Response) => {
                 // Fetch a few safe foods for context
                 const preferences = user.preferences || { dietary: [], allergies: [], health_goals: [] };
                 const userAllergies = preferences.allergies.map((a: string) => a.normalize('NFC').toLowerCase().trim());
-                
+
                 const allAvailableProducts = await ProductModel.find({ isAvailable: true }).limit(20).lean();
                 const safeProducts = allAvailableProducts.filter(product => {
-                    const ingredients = (product.recipe || []).map((r: any) => 
+                    const ingredients = (product.recipe || []).map((r: any) =>
                         r.name.normalize('NFC').toLowerCase().trim()
                     );
                     return !ingredients.some((ingredient: string) =>
