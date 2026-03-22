@@ -30,7 +30,7 @@ export const getAllProductsHandler = catchErrors(async (req: Request, res: Respo
     sort: sort as string,
     page: page ? Number(page) : 1,
     limit: limit ? Number(limit) : 12,
-    isAvailable: isAvailable === 'true',
+    isAvailable: isAvailable === undefined ? undefined : isAvailable === 'true',
   };
 
   const result = await getAllProducts(filters);

@@ -694,12 +694,15 @@ export const getOrders = async (query: any = {}) => {
       },
     ]);
 
-    return (
-      stats[0] || {
-        totalRevenue: 0,
-        totalOrders: 0,
-      }
-    );
+    const totalCustomers = await UserModel.countDocuments({ role: 'CUSTOMER' });
+    const totalProducts = await ProductModel.countDocuments();
+
+    return {
+      totalRevenue: stats[0]?.totalRevenue || 0,
+      totalOrders: stats[0]?.totalOrders || 0,
+      totalCustomers,
+      totalProducts,
+    };
   };
   export const getRecentOrders = async () => {
     return OrderModel.find().sort({ createdAt: -1 }).limit(5).populate('user_id', 'username email phone');

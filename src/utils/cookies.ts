@@ -5,8 +5,8 @@ const secure = process.env.NODE_ENV !== 'development';
 export const REFRESH_PATH = '/api/auth/refresh';
 
 const defaults: CookieOptions = {
-  sameSite: 'none',
-  secure: true,
+  sameSite: 'lax',
+  secure,
   httpOnly: true,
 };
 
