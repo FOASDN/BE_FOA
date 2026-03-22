@@ -19,8 +19,16 @@ router.get('/', getAllProductsHandler);
 router.get('/categories', getProductCategoriesHandler);
 
 // AI-powered routes (authenticated)
-router.get('/recommendations', authenticate, getRecommendationsHandler);
-router.get('/safe-foods', authenticate, getSafeFoodsHandler);
+router.get('/recommendations', authenticate, async (req, res, next) => {
+  const { getRecommendationsHandler } = await import('@/controllers/recommendation.controller');
+  return getRecommendationsHandler(req, res, next);
+});
+
+router.get('/safe-foods', authenticate, async (req, res, next) => {
+  const { getSafeFoodsHandler } = await import('@/controllers/recommendation.controller');
+  return getSafeFoodsHandler(req, res, next);
+});
+
 router.get('/:id', getProductByIdHandler);
 
 // Admin routes

@@ -15,3 +15,4 @@ adminRoutes.get('/cash-control', authenticate, authorize(Role.ADMIN), getCashCon
 adminRoutes.post('/collect-cash', authenticate, authorize(Role.ADMIN), collectCashHandler);
 
 export default adminRoutes;
+
