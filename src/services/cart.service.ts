@@ -70,3 +70,8 @@ export const addToCart = async (userId: mongoose.Types.ObjectId, input: AddToCar
   await cart.save();
   return cart;
 };
+
+export const getCart = async (userId: any) => {
+  const cart = await CartModel.findOne({ user_id: userId }).populate('items.product_id').lean();
+  return cart || { user_id: userId, items: [] };
+};
