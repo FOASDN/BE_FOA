@@ -1,3 +1,6 @@
+if (__dirname.includes('dist')) {
+  require('module-alias/register');
+}
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
