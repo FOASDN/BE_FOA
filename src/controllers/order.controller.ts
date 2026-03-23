@@ -72,6 +72,7 @@ export const placeOrderHandler = catchErrors(async (req, res) => {
 export const getMyOrdersHandler = catchErrors(async (req, res) => {
   const userId = req.userId;
   const orders = await getUserOrders(userId);
+  console.log(`[OrderController:getMyOrders] UserId: ${userId}, Orders found: ${orders?.length}`);
   return res.success(OK, { data: orders });
 });
 
