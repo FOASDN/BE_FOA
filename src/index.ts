@@ -1,6 +1,3 @@
-if (__dirname.includes('dist')) {
-  require('module-alias/register');
-}
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -18,11 +15,11 @@ const app = express();
 //middleware
 const allowedOrigins = [
   APP_ORIGIN,
-  "https://fefoa.vercel.app",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:3000",
-  "http://127.0.0.1:5173",
+  'https://fefoa.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
 ];
 
 const corsOptions: cors.CorsOptions = {
@@ -68,13 +65,9 @@ io.on('connection', (socket) => {
     const rawCookie = socket.handshake.headers.cookie || '';
     const parsed = parseCookie(rawCookie);
     const authToken =
-      typeof socket.handshake.auth?.accessToken === 'string'
-        ? socket.handshake.auth.accessToken
-        : undefined;
+      typeof socket.handshake.auth?.accessToken === 'string' ? socket.handshake.auth.accessToken : undefined;
     const authHeader =
-      typeof socket.handshake.headers.authorization === 'string'
-        ? socket.handshake.headers.authorization
-        : undefined;
+      typeof socket.handshake.headers.authorization === 'string' ? socket.handshake.headers.authorization : undefined;
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
     const accessToken = authToken || bearerToken || parsed.accessToken || '';
     const { payload } = verifyToken(accessToken);
