@@ -22,6 +22,8 @@ const customResponse = (req: Request, res: Response, next: NextFunction) => {
       ...args,
     };
 
+    console.log(`[Response][${req.method} ${req.originalUrl}] Status: ${status}, Data payload string length: ${JSON.stringify(data)?.length || 0}`);
+
     return res.status(status).json(response);
   };
 

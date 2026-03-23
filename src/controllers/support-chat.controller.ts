@@ -50,6 +50,7 @@ export const sendMessage = catchErrors(async (req: Request, res: Response) => {
   const { content, image_url } = req.body as { content?: string, image_url?: string };
 
   const message = await supportChatService.sendMessage(id, userId, role, content ?? '', image_url);
+  const { conversation } = await supportChatService.getMessages(id, userId, role);
   const obj = message.toObject ? message.toObject() : message;
   const payload = {
     id: (obj as any)._id?.toString(),
@@ -66,6 +67,12 @@ export const sendMessage = catchErrors(async (req: Request, res: Response) => {
   try {
     const io = req.app.get('io');
     io?.to(`support:conversation:${id}`)?.emit('support:new_message', payload);
+    if (payload.senderType === 'STAFF') {
+      io?.to(`user:${conversation.user_id?.toString()}`)?.emit('support:inbox_updated', {
+        conversationId: payload.conversationId,
+        message: payload,
+      });
+    }
   } catch {
     // ignore realtime errors
   }
