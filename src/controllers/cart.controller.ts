@@ -24,12 +24,6 @@ export const addToCartHandler = catchErrors(async (req, res) => {
   });
 });
 
-export const getCartHandler = catchErrors(async (req, res) => {
-  const user = req.userId;
-  const cart = await getCart(user);
-  return res.success(OK, { data: cart });
-});
-
 export const mergeCartHandler = catchErrors(async (req, res) => {
   const user = req.userId;
   const { items } = req.body;
@@ -52,7 +46,6 @@ export const removeItemHandler = catchErrors(async (req, res) => {
 });
 
 export const clearCartHandler = catchErrors(async (req, res) => {
-
   const user = req.userId;
   await clearCart(user);
   return res.success(OK, { message: 'Đã xóa giỏ hàng' });
