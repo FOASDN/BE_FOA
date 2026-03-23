@@ -43,7 +43,10 @@ export const loginHandler = catchErrors(async (req, res) => {
     accessToken: access_token,
     refreshToken: refresh_token,
     deviceId: deviceId,
-  }).success<Omit<IUser, 'password_hash'>>(OK, { data: user, message: 'Đăng nhập thành công' });
+  }).success<Omit<IUser, 'password_hash'> & { access_token?: string }>(OK, {
+    data: { ...user, access_token } as any,
+    message: 'Đăng nhập thành công',
+  });
 });
 
 export const refreshHandler = catchErrors(async (req, res) => {
