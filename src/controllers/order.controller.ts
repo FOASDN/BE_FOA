@@ -18,6 +18,7 @@ import { createOrderStatusNotification } from '@/services/notification.service';
 import { OrderStatus } from '@/types/order.type';
 import { catchErrors } from '@/utils/asyncHandler';
 import { placeOrderValidator } from '@/validators/order.validator';
+import { formatOrderNote } from '@/utils/formatOrderNote';
 import z from 'zod';
 
 /**
@@ -29,7 +30,12 @@ export const placeOrderHandler = catchErrors(async (req, res) => {
   const userId = req.userId;
   const input = placeOrderValidator.parse(req.body);
 
-  const order = await placeOrder(userId, input);
+  const formattedInput = {
+    ...input,
+    note: formatOrderNote(input.note),
+  };
+
+  const order = await placeOrder(userId, formattedInput);
 
   // Notify staff via socket (best-effort)
   const io = req.app.get('io');
