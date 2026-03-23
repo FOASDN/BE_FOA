@@ -7,7 +7,7 @@ export const REFRESH_PATH = '/api/auth/refresh';
 
 const defaults: CookieOptions = {
   sameSite: 'lax',
-  secure,
+  secure: true,
   httpOnly: true,
 };
 
