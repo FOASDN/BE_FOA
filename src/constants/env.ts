@@ -12,6 +12,22 @@ const getEnv = (key: string, defaultValue?: string): string => {
   return value;
 };
 
+const getNumberEnv = (key: string, defaultValue: number): number => {
+  const value = process.env[key];
+
+  if (value === undefined || value === '') {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`Environment variable ${key} must be a positive number`);
+  }
+
+  return parsed;
+};
+
 //env
 export const NODE_ENV = getEnv('NODE_ENV');
 export const PORT = getEnv('PORT', '4004');
@@ -22,6 +38,8 @@ export const APP_ORIGIN = getEnv('APP_ORIGIN');
 //auth
 export const AUTH_JWT_SECRET = getEnv('AUTH_JWT_SECRET');
 export const AUTH_JWT_REFRESH_SECRET = getEnv('AUTH_JWT_REFRESH_SECRET');
+export const AUTH_ACCESS_TOKEN_TTL_MINUTES = getNumberEnv('AUTH_ACCESS_TOKEN_TTL_MINUTES', 60 * 24 * 7);
+export const AUTH_REFRESH_TOKEN_TTL_DAYS = getNumberEnv('AUTH_REFRESH_TOKEN_TTL_DAYS', 30);
 
 //mongo_db
 export const MONGODB_URI = getEnv('MONGODB_URI');

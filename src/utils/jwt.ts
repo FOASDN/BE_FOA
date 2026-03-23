@@ -1,5 +1,5 @@
 import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
-import { AUTH_JWT_SECRET } from '@/constants/env';
+import { AUTH_ACCESS_TOKEN_TTL_MINUTES, AUTH_JWT_SECRET } from '@/constants/env';
 import crypto from 'crypto';
 import { IUser as UserDocument } from '@/types';
 import { Role } from '@/types/user.type';
@@ -17,7 +17,7 @@ const defaults: SignOptions = {
 };
 
 const accessTokenSignOptions: SignOptionsAndSecret = {
-  expiresIn: '1d',
+  expiresIn: `${AUTH_ACCESS_TOKEN_TTL_MINUTES}m`,
   secret: AUTH_JWT_SECRET,
 };
 
