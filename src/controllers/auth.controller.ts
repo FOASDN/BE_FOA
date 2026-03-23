@@ -20,7 +20,6 @@ import {
   loginValidator,
   registerValidator,
   resetPasswordValidator,
-  verificationCodeValidator,
   verifyEmailValidator,
 } from '@/validators/auth.validator';
 
@@ -31,7 +30,10 @@ export const registerHandler = catchErrors(async (req, res) => {
   });
 
   const user = await createUser(params);
-  return res.success<Omit<IUser, 'password_hash'>>(CREATED, { data: user, message: 'Tài khoản đăng ký thành công' });
+  return res.success<Omit<IUser, 'password_hash'>>(CREATED, {
+    data: user,
+    message: 'Tài khoản đăng ký thành công',
+  });
 });
 
 export const loginHandler = catchErrors(async (req, res) => {
@@ -42,17 +44,21 @@ export const loginHandler = catchErrors(async (req, res) => {
     res,
     accessToken: access_token,
     refreshToken: refresh_token,
-    deviceId: deviceId,
-  }).success<Omit<IUser, 'password_hash'> & { access_token?: string }>(OK, {
-    data: { ...user, access_token } as any,
+    deviceId,
+  }).success<Omit<IUser, 'password_hash'>>(OK, {
+    data: user,
     message: 'Đăng nhập thành công',
+    tokens: {
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      deviceId,
+    },
   });
 });
 
 export const refreshHandler = catchErrors(async (req, res) => {
-  console.log(req.cookies);
-
-  const refreshToken = req.cookies.refreshToken as string | undefined;
+  const refreshToken = req.body?.refreshToken || (req.cookies.refreshToken as string | undefined);
+  const deviceId = req.body?.deviceId || (req.cookies.deviceId as string | undefined);
   appAssert(refreshToken, UNAUTHORIZED, 'Token không hợp lệ');
 
   const { access_token, refresh_token } = await refreshUserAccessToken(refreshToken);
@@ -61,7 +67,15 @@ export const refreshHandler = catchErrors(async (req, res) => {
     res,
     accessToken: access_token,
     refreshToken: refresh_token,
-  }).success(OK, { message: 'Làm mới token thành công' });
+    deviceId,
+  }).success(OK, {
+    message: 'Làm mới token thành công',
+    tokens: {
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      deviceId,
+    },
+  });
 });
 
 export const verifyEmailHandler = catchErrors(async (req, res) => {
@@ -69,7 +83,7 @@ export const verifyEmailHandler = catchErrors(async (req, res) => {
 
   await verifyEmail(email, code);
 
-  return res.success(OK, { message: 'Xác thức email thành công' });
+  return res.success(OK, { message: 'Xác thực email thành công' });
 });
 
 export const resendVerifyEmailHandler = catchErrors(async (req, res) => {
@@ -117,7 +131,7 @@ export const getMeHandler = catchErrors(async (req, res) => {
 
 export const logout = catchErrors(async (req, res) => {
   const userId = req.userId;
-  const deviceId = req.cookies.deviceId as string | undefined;
+  const deviceId = req.body?.deviceId || (req.cookies.deviceId as string | undefined);
   await logoutUser(userId, deviceId);
   return clearAuthCookies(res).success(OK, { message: 'Đăng xuất thành công' });
 });

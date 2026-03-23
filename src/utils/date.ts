@@ -1,12 +1,20 @@
 export const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 
+export const minutesFromNow = (minutes: number) => {
+  return new Date(Date.now() + minutes * 60 * 1000);
+};
+
+export const daysFromNow = (days: number) => {
+  return new Date(Date.now() + days * ONE_DAY_MS);
+};
+
 export const thirtyDaysFromNow = () => {
-  return new Date(Date.now() + 30 * ONE_DAY_MS);
+  return daysFromNow(30);
 };
 
 export const fifteenMinutesFromNow = () => {
-  return new Date(Date.now() + 15 * 60 * 1000);
+  return minutesFromNow(15);
 };
 
 export const fiveMinutesAgo = () => {

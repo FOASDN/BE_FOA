@@ -63,11 +63,20 @@ export const io = new Server(server, {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  // Auth (cookie-based)
+  // Auth from cookie or bearer token for mobile clients.
   try {
     const rawCookie = socket.handshake.headers.cookie || '';
     const parsed = parseCookie(rawCookie);
-    const accessToken = parsed.accessToken ?? '';
+    const authToken =
+      typeof socket.handshake.auth?.accessToken === 'string'
+        ? socket.handshake.auth.accessToken
+        : undefined;
+    const authHeader =
+      typeof socket.handshake.headers.authorization === 'string'
+        ? socket.handshake.headers.authorization
+        : undefined;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+    const accessToken = authToken || bearerToken || parsed.accessToken || '';
     const { payload } = verifyToken(accessToken);
     if (payload) {
       socket.data.userId = payload.user_id;

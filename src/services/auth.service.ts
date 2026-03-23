@@ -1,4 +1,4 @@
-import { APP_ORIGIN } from '@/constants/env';
+import { APP_ORIGIN, AUTH_REFRESH_TOKEN_TTL_DAYS } from '@/constants/env';
 import { CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, TOO_MANY_REQUESTS, UNAUTHORIZED } from '@/constants/http';
 import { RefreshTokenModel, UserModel } from '@/models';
 import VerificationCodeModel from '@/models/verificationCode.model';
@@ -6,7 +6,7 @@ import { IUser } from '@/types';
 import { VerificationCodeType } from '@/types/verificationCode.type';
 import appAssert from '@/utils/appAssert';
 import { hashValue } from '@/utils/bcrypt';
-import { fifteenMinutesFromNow, fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow, thirtyDaysFromNow } from '@/utils/date';
+import { daysFromNow, fifteenMinutesFromNow, fiveMinutesAgo, ONE_DAY_MS, oneHourFromNow } from '@/utils/date';
 import { getVerifyEmailOTPtemplate, getPasswordResetOTPtemplate } from '@/utils/emailTemplates';
 import { generateRefreshToken, hashToken, signToKen } from '@/utils/jwt';
 import { sendMail } from '@/utils/sendMail';
@@ -91,7 +91,7 @@ export const login = async ({ email, password, user_agent, device_id }: TLoginPa
       token_hash: hashToken(refresh_token),
       device_id: payload.device_id,
       user_agent,
-      expires_at: thirtyDaysFromNow(),
+      expires_at: daysFromNow(AUTH_REFRESH_TOKEN_TTL_DAYS),
     });
 
     await refresh.save({ session });
@@ -129,7 +129,7 @@ export const refreshUserAccessToken = async (refresh_token: string) => {
       device_id: refreshToken.device_id,
       user_agent: refreshToken.user_agent,
       token_hash: hashToken(newRefreshToken),
-      expires_at: thirtyDaysFromNow(),
+      expires_at: daysFromNow(AUTH_REFRESH_TOKEN_TTL_DAYS),
     });
   }
 

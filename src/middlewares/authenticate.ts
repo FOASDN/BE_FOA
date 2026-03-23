@@ -6,15 +6,20 @@ import { UNAUTHORIZED } from '@/constants/http';
 import { verifyToken } from '@/utils/jwt';
 import { UserModel } from '@/models';
 
-const authenticate: RequestHandler = catchErrors(async (req, res, next) => {
-  // Support both cookie (web) and Authorization header (mobile / React Native)
-  let accessToken = req.cookies.accessToken as string | undefined;
-  if (!accessToken) {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      accessToken = authHeader.slice(7);
-    }
+const getAccessTokenFromRequest = (req: Parameters<RequestHandler>[0]) => {
+  const cookieToken = req.cookies.accessToken as string | undefined;
+  if (cookieToken) return cookieToken;
+
+  const authHeader = req.headers.authorization;
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
   }
+
+  return undefined;
+};
+
+const authenticate: RequestHandler = catchErrors(async (req, res, next) => {
+  const accessToken = getAccessTokenFromRequest(req);
   appAssert(accessToken, UNAUTHORIZED, 'Not authorized', AppErrorCode.InvalidAccessToken);
 
   const { error, payload } = verifyToken(accessToken);
