@@ -17,7 +17,18 @@ export const payosWebhookHandler = catchErrors(async (req: Request, res: Respons
   // PayOS sends the event code in the root of the request body and within verifiedData
   // '00' in verifiedData.code indicates a successful payment
   if (webhookBody.code === '00' && verifiedData.code === '00') {
-    await confirmPayment(verifiedData.orderCode);
+    const order = await confirmPayment(verifiedData.orderCode);
+    
+    // Notify user via socket so the mobile app can instantly close the checkout Modal
+    const io = req.app.get('io');
+    if (io && order && order.user_id) {
+      io.to(`user:${order.user_id}`).emit('order:status_updated', {
+        orderId: order._id,
+        code: order.code,
+        status: order.status,
+        message: `Thanh toán thành công. Đơn hàng #${order.code} đã được xác nhận.`,
+      });
+    }
   }
 
   return res.status(OK).json({

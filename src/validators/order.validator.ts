@@ -50,6 +50,8 @@ export const placeOrderValidator = z.object({
    */
   delivery_address: deliveryAddressValidator.optional(),
   note: z.string().trim().max(500).optional(),
+  return_url: z.string().trim().url().optional(),
+  cancel_url: z.string().trim().url().optional(),
 });
 
 // ---- Inferred Types ----

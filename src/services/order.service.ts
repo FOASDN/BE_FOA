@@ -234,7 +234,7 @@ async function checkOrderHealthConflicts(
 // ────────────────────────────────────────────────────────────────────────────
 
 export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceOrderValidator) => {
-  const { voucher: voucherId, payment_method, items, delivery_address, shipping_fee } = input;
+  const { voucher: voucherId, payment_method, items, delivery_address, shipping_fee, return_url, cancel_url } = input;
 
   return withTransaction(async (session) => {
     // ── 1. Resolve & validate all items ──────────────────────────────────────
@@ -333,8 +333,8 @@ export const placeOrder = async (userId: mongoose.Types.ObjectId, input: TPlaceO
       const numericOrderCode = Date.now();
       console.log('🔢 Generated numeric order code:', numericOrderCode);
 
-      const returnUrl = `${APP_ORIGIN}/success?code=${order.code}`;
-      const cancelUrl = `${APP_ORIGIN}/failed?reason=cancel&orderCode=${numericOrderCode}`;
+      const returnUrl = return_url || `${APP_ORIGIN}/success?code=${order.code}`;
+      const cancelUrl = cancel_url || `${APP_ORIGIN}/failed?reason=cancel&orderCode=${numericOrderCode}`;
 
       // Update order with numeric code for PayOS mapping
       order.payment.payos_order_code = numericOrderCode;
